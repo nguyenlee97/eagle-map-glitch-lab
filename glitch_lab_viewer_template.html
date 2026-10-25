@@ -1,0 +1,1857 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Eagle 3D Map Walker & Glitch Lab — Mondstadt M0 + M1</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0f1d26;color:#ecf4f1;font:12.5px/1.48 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit}
+button{border:1px solid #486870;background:#1d3640;color:#eaf5f0;border-radius:7px;padding:6px 10px;cursor:pointer;transition:all .12s}
+button:hover,button.active{background:#3a645d;border-color:#a5dec2;color:#fff}
+button.primary{background:#2d5c4f;border-color:#7cd4b2;font-weight:600}
+button.danger{background:#522a2a;border-color:#d87a7a;color:#ffdada}
+button.warn{background:#544221;border-color:#e0bc6b;color:#fff0c7}
+#view{position:absolute;inset:0}
+canvas{display:block;touch-action:none}
+
+/* Top Header Bar */
+#top{position:absolute;left:16px;top:14px;right:16px;display:flex;align-items:flex-start;justify-content:space-between;pointer-events:none;gap:14px;z-index:5}
+.brand{padding:11px 16px;border:1px solid #587b8288;border-radius:12px;background:#0d222ce8;box-shadow:0 8px 32px #0008;pointer-events:auto;max-width:560px;backdrop-filter:blur(10px)}
+.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#8ad4c6;font-weight:600}
+h1{font-size:19px;font-weight:700;margin:3px 0 4px;color:#fff}
+h1 span{color:#f2d488;font-weight:500}
+.brand small{color:#b5cecc;display:block;font-size:11.5px}
+.top-right{display:flex;gap:8px;align-items:center;pointer-events:auto;flex-wrap:wrap}
+.kpi-pill{padding:6px 11px;border-radius:9px;background:#132b36eb;border:1px solid #52737a;font-size:11px;color:#cfe3e0;font-variant-numeric:tabular-nums}
+.kpi-pill strong{color:#ffd97d;font-size:12.5px}
+.kpi-pill.crit strong{color:#ff8a8a}
+.kpi-pill.ok strong{color:#86e6b8}
+
+/* Left Panel: Navigation, Overlays & Automated Glitch Playlist */
+#leftPanel{position:absolute;top:106px;left:16px;bottom:68px;width:345px;overflow-y:auto;border-radius:12px;padding:14px;background:#0e232ded;border:1px solid #53747b77;backdrop-filter:blur(12px);z-index:5;scrollbar-width:thin;scrollbar-color:#4e7075 transparent}
+#leftPanel.collapsed{display:none}
+.sec-title{color:#96c2be;text-transform:uppercase;font-size:10px;letter-spacing:.13em;font-weight:700;margin:4px 0 8px;display:flex;justify-content:space-between;align-items:center}
+.divider{height:1px;background:#59767a44;margin:12px 0}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn-row{display:flex;flex-wrap:wrap;gap:5px}
+.btn-row button,.btn-grid button{font-size:11.5px;padding:6px 8px;text-align:center}
+
+label.toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;padding:4px 0;color:#cde0de;font-size:12px}
+label.toggle:hover{color:#fff}
+input[type=checkbox]{accent-color:#7cd4b2;width:15px;height:15px;cursor:pointer}
+
+/* Filter Tabs & Glitch Playlist */
+.filter-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.filter-tabs button{font-size:10.5px;padding:4px 7px;border-radius:6px;background:#162d37}
+.filter-tabs button.active{background:#346359;border-color:#98e3c5;color:#fff;font-weight:600}
+#glitchList{max-height:255px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:3px}
+.glitch-card{padding:8px 10px;border-radius:8px;background:#152e39;border-left:4px solid #d9a74a;border-top:1px solid #355059;border-right:1px solid #355059;border-bottom:1px solid #355059;cursor:pointer;transition:all .12s}
+.glitch-card:hover,.glitch-card.selected{background:#214552;border-top-color:#88c7be;border-right-color:#88c7be;border-bottom-color:#88c7be}
+.glitch-card.sev-high{border-left-color:#f26d6d}
+.glitch-card.sev-medium{border-left-color:#f0b85a}
+.glitch-card.sev-low{border-left-color:#68c4af}
+.glitch-card .g-head{display:flex;justify-content:space-between;font-size:10.5px;color:#9cc2bf;margin-bottom:2px}
+.glitch-card .g-title{font-weight:600;color:#f3f8f6;font-size:11.5px;line-height:1.3}
+.glitch-card .g-sub{font-size:10.5px;color:#b2cbc8;margin-top:3px}
+
+/* Right Panel: Interactive Glitch Gun, Inspector & Live Prop Mover */
+#rightPanel{position:absolute;top:106px;right:16px;bottom:68px;width:335px;overflow-y:auto;border-radius:12px;padding:14px;background:#0e232ded;border:1px solid #53747b77;backdrop-filter:blur(12px);z-index:5;scrollbar-width:thin;scrollbar-color:#4e7075 transparent}
+#rightPanel.collapsed{display:none}
+.inspector-box{background:#152c36;border:1px solid #3c5c66;border-radius:9px;padding:10px;margin-bottom:10px;font-size:11.5px}
+.inspector-box h3{margin:0 0 6px;font-size:13px;color:#f2d488}
+.kv-row{display:flex;justify-content:space-between;margin:3px 0;color:#abc6c4}
+.kv-row strong{color:#f0f7f5;font-variant-numeric:tabular-nums}
+.hint-box{background:#1b3838;border:1px solid #4c8577;border-radius:7px;padding:7px 9px;color:#c7ebe1;font-size:11px;margin-top:6px;line-height:1.4}
+
+.pin-form{display:flex;flex-direction:column;gap:7px}
+.pin-form select,.pin-form input,.pin-form textarea{width:100%;background:#142933;border:1px solid #496973;color:#eff7f5;border-radius:6px;padding:6px 8px;font-size:11.5px}
+.pin-form textarea{resize:vertical;min-height:46px}
+
+.nudge-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}
+.nudge-pad button{padding:5px;font-size:11px;font-variant-numeric:tabular-nums}
+
+#userPinList{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.user-pin-item{padding:6px 8px;border-radius:6px;background:#193540;border:1px solid #486d78;font-size:11px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.user-pin-item span{cursor:pointer;flex:1}
+.user-pin-item span:hover{color:#ffd97d}
+
+/* Bottom Status & Telemetry Bar */
+#bottom{position:absolute;left:16px;right:16px;bottom:12px;background:#0d222ced;border:1px solid #53747b77;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 15px;backdrop-filter:blur(10px);z-index:5}
+#walkstate{color:#c9e6df;font-size:12px;font-variant-numeric:tabular-nums}
+kbd{font:10px ui-monospace,Consolas,monospace;padding:2px 5px;border:1px solid #6c8c91;border-bottom-width:2px;border-radius:4px;background:#254049;color:#eef7f4}
+.legend-bar{display:flex;gap:10px;align-items:center;font-size:11px;color:#b8d1cf;flex-wrap:wrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+
+/* Crosshair & Compass */
+#crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;text-align:center}
+#crosshair .reticle{width:22px;height:22px;border:2px solid #86f0c9cc;border-radius:50%;display:grid;place-items:center;margin:0 auto;box-shadow:0 0 8px #000a}
+#crosshair .reticle::after{content:"";width:4px;height:4px;background:#ffdd78;border-radius:50%}
+#crosshair small{display:block;margin-top:4px;font-size:10px;color:#ffe699;text-shadow:0 1px 3px #000;background:#0d222ccc;padding:1px 6px;border-radius:4px;white-space:nowrap}
+
+#compass{position:absolute;right:365px;bottom:78px;width:68px;height:68px;border:1px solid #7ea1a688;border-radius:50%;background:#0e242ed9;display:grid;place-items:center;pointer-events:none;z-index:4}
+#needle{font-size:24px;color:#f2d488;transform-origin:center}
+#compass small{position:absolute;font-size:8.5px;color:#b8d1cf;font-weight:600}
+
+#toast{position:absolute;left:50%;top:84px;transform:translateX(-50%);max-width:540px;border-radius:8px;background:#1e3f3aeb;border:1px solid #7edbbd;color:#ebfff8;padding:9px 16px;display:none;text-align:center;pointer-events:none;z-index:20;box-shadow:0 8px 25px #0008;font-weight:500}
+#loading{position:absolute;inset:0;display:grid;place-content:center;text-align:center;background:#0d1f29;z-index:30;color:#dcf0e8}
+#loading .spin{width:40px;height:40px;border:3px solid #59828744;border-top-color:#f2d488;border-radius:50%;margin:0 auto 14px;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Modal for JSON Patch / Audit Summary */
+#modalOverlay{position:absolute;inset:0;background:#0009;z-index:25;display:none;place-items:center}
+#modalBox{width:min(880px,92vw);max-height:86vh;overflow:auto;background:#102630;border:1px solid #78a3a8;border-radius:14px;padding:22px;box-shadow:0 24px 80px #000c}
+#modalBox h2{margin:0 0 8px;color:#f2d488}
+#modalBox pre{background:#0b1a22;border:1px solid #35525c;padding:12px;border-radius:8px;overflow:auto;max-height:50vh;font:11.5px/1.5 ui-monospace,Consolas,monospace;color:#cbe6e0}
+
+/* Bot Journey Replay DVR Dock */
+#replayDock{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);width:min(760px,calc(100vw - 740px));min-width:480px;background:#0c212beb;border:1.5px solid #6adbbd;border-radius:12px;padding:10px 14px;z-index:12;box-shadow:0 14px 42px #000c;display:none;backdrop-filter:blur(10px)}
+#replayDock .r-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+#replayDock .r-title{font-size:12.5px;font-weight:700;color:#ffe596}
+#replayDock .r-badge{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:700;background:#4a1c24;border:1px solid #ff7a7a;color:#ffd2d2}
+#replayDock .r-badge.ok{background:#153d33;border-color:#4ae0b0;color:#b8ffdf}
+#replayDock .r-telemetry{background:#08171f;border:1px solid #2b4c57;border-radius:7px;padding:6px 10px;font-size:11.2px;color:#d6f5ef;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+#replayDock .r-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#replayDock input[type=range]{flex:1;min-width:140px;accent-color:#48e5b2;cursor:pointer}
+.swarm-select{width:100%;background:#0c1e26;color:#ebfff8;border:1px solid #4d7880;border-radius:7px;padding:6px 8px;font-size:11.5px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="view" aria-label="Eagle 3D Map Walker & Glitch Lab"></div>
+
+<header id="top">
+  <div class="brand">
+    <div class="eyebrow">Project Eagle · Automated 3D Walkability & Glitch Debugger</div>
+    <h1>Eagle 3D Map <span>Walker & Glitch Lab</span></h1>
+    <small id="subHeader">Đang nạp cảnh 3D & kết quả quét 5 nhóm Glitch vật lý…</small>
+  </div>
+  <div class="top-right">
+    <div class="kpi-pill crit" title="Tổng số điểm Glitch phát hiện tự động">Glitches: <strong id="kpiGlitches">0</strong></div>
+    <div class="kpi-pill" title="Độ phủ vùng đi bộ liên thông từ Cổng Mondstadt">Đi bộ liên thông: <strong id="kpiCoverage">0%</strong></div>
+    <div class="kpi-pill" title="Tổng số Bot Swarm Đa Hạt Giống (Multi-Seed Swarm)">Swarm Bots: <strong id="kpiSwarmCount">86</strong></div>
+    <div class="kpi-pill" title="Các ốc đảo mặt đất đi bộ được nhưng bị đứt đường nối">Đảo cô lập: <strong id="kpiIslands">0</strong></div>
+    <button id="btnToggleLeft">☰ Bảng Trái</button>
+    <button id="btnToggleRight">🎯 Súng Debug (Phải)</button>
+    <button id="btnOpenReport" class="warn">📊 Báo Cáo & JSON</button>
+  </div>
+</header>
+
+<aside id="leftPanel">
+  <div class="sec-title"><span>1. Chế độ Di chuyển & Swarm Bot</span><span id="modeBadge" style="color:#ffd97d">ORBIT</span></div>
+  <div class="btn-grid">
+    <button id="btnModeOrbit" class="active">🎥 Quỹ đạo (Orbit)</button>
+    <button id="btnModeWalk">🚶 Đi bộ (WASD)</button>
+    <button id="btnModeNoclip" title="Bay tự do góc nhìn thứ nhất xuyên tường để soi gầm model & khe hở">👻 Bay Xuyên Tường (G)</button>
+    <button id="btnSpawnBots" class="primary" title="Thả toàn bộ đàn 86 Bot Đa Hạt Giống chạy thực tế trên bản đồ">🐝 Thả Đàn 86 Bot (B)</button>
+  </div>
+  <div class="btn-row" style="margin-top:6px">
+    <button id="btnDropSeedHere" class="warn" style="flex:1" title="Thả 1 Hạt giống (Seed) mới ngay tại tâm ngắm/nhân vật và tung 24 Bot tỏa ra 360° dò lỗi trực tiếp!">🌱 Thả Seed Mới Tại Tâm Ngắm (Phím H)</button>
+  </div>
+  <div class="btn-row" style="margin-top:6px">
+    <button id="btnOverview">🗺️ Toàn cảnh</button>
+    <button id="btnJumpStart">🏰 Cổng Cầu Đá</button>
+    <button id="btnJumpPlaza">⛲ Quảng Trường</button>
+    <button id="btnJump6Props">🛠️ 6 Cụm Đã Sửa</button>
+  </div>
+
+  <div class="divider"></div>
+  <div class="sec-title"><span>2. Kính X-Ray & Lớp Kiểm Tra</span><kbd>Phím V</kbd></div>
+  <label class="toggle"><span>🔬 <strong>Kính X-Ray Độ Dốc & Pháp Tuyến (V)</strong></span><input id="chkXray" type="checkbox"></label>
+  <label class="toggle"><span>📍 Cột Cắm Cờ Glitch & Thước Hở Đế</span><input id="chkGlitchMarkers" type="checkbox" checked></label>
+  <label class="toggle"><span>🧭 Bản Đồ Nhiệt Liên Thông & Đảo Cô Lập</span><input id="chkHeatmap" type="checkbox" checked></label>
+  <label class="toggle"><span>🌉 Tuyến Bot Đi Bộ & Cầu Nối Chokepoint</span><input id="chkRoutes" type="checkbox" checked></label>
+  <label class="toggle"><span>🕸️ Lưới Dây Va Chạm .COL3</span><input id="chkColWire" type="checkbox"></label>
+  <label class="toggle"><span>🏛️ Mô hình Near (.DFF)</span><input id="chkNear" type="checkbox" checked></label>
+  <label class="toggle"><span>🌲 Cây thông & Bụi cỏ (Foliage)</span><input id="chkFoliage" type="checkbox" checked></label>
+  <label class="toggle"><span>📐 Lưới Tile 256m × 256m</span><input id="chkGrid" type="checkbox"></label>
+  <label class="toggle"><span>🌙 Ánh sáng Ban Đêm (Prelight)</span><input id="chkNight" type="checkbox"></label>
+
+  <div class="divider"></div>
+  <div class="sec-title">
+    <span>3. Đàn Bot Đa Hạt Giống & Dựng Lại Hành Trình</span>
+    <span id="swarmListCount" style="color:#ffd97d">86</span>
+  </div>
+  <select id="swarmSeedSelect" class="swarm-select">
+    <option value="ALL_FAILED" selected>🔥 Chỉ Lỗi Thật (True Bugs: Hố Void / Taluy Lỗi / Vũng Trũng)</option>
+    <option value="ALL_INTENDED">🌊 Dừng Địa Hình Tự Nhiên (Bờ Hồ Có Đáy / Vách Núi / Tường M0)</option>
+    <option value="TARGET_ROUTES">🧭 20 Tuyến Hành Trình Đích Chính</option>
+    <option value="ALL_SWARM">🐝 Toàn bộ Đàn Swarm (10 Seed · 100 Bot)</option>
+  </select>
+  <div id="routeButtons" class="btn-row" style="flex-direction:column;flex-wrap:nowrap;max-height:220px;overflow-y:auto"></div>
+
+  <div class="divider"></div>
+  <div class="sec-title">
+    <span>4. Danh Sách Glitch Tự Động (1-Click Teleport)</span>
+    <span id="glitchFilterCount" style="color:#ffd97d">0</span>
+  </div>
+  <div class="filter-tabs" id="glitchFilterTabs">
+    <button data-filter="ALL" class="active">Tất cả</button>
+    <button data-filter="WALKABILITY_BARRIER">Đứt đường</button>
+    <button data-filter="FLOATING_MODEL">Hở model</button>
+    <button data-filter="VOID_TRAP">Hố rơi / Biên</button>
+    <button data-filter="COLLISION_MISMATCH">Lệch COL</button>
+    <button data-filter="PATH_TRAP">Bậc cao / Kẹt</button>
+  </div>
+  <div id="glitchList"></div>
+</aside>
+
+<aside id="rightPanel">
+  <div class="sec-title"><span>🎯 Súng Chẩn Đoán & Ghim Lỗi</span><kbd>Phím F / Chuột Phải</kbd></div>
+  <div class="inspector-box" id="liveRayBox">
+    <h3 id="inspTitle">Ngắm & bấm [F] hoặc Click phải vào vật thể</h3>
+    <div class="kv-row"><span>Tọa độ ENU (m):</span><strong id="inspENU">—</strong></div>
+    <div class="kv-row"><span>Tọa độ GTA SA:</span><strong id="inspGTA">—</strong></div>
+    <div class="kv-row"><span>Model .DFF trúng:</span><strong id="inspDFF">—</strong></div>
+    <div class="kv-row"><span>Mặt đất .COL3 dưới:</span><strong id="inspCOL">—</strong></div>
+    <div class="kv-row"><span>Độ dốc / Pháp tuyến nz:</span><strong id="inspSlope">—</strong></div>
+    <div class="kv-row"><span>Độ hở chân đế (Gap):</span><strong id="inspGap">—</strong></div>
+    <div class="hint-box" id="inspDiagnosis">Di chuyển bằng WASD hoặc Orbit, trỏ vào điểm nghi lỗi và nhấn phím <strong>F</strong> (hoặc Click chuột phải) để đo khoảng hở chân đế, kiểm tra va chạm và ghim lỗi.</div>
+  </div>
+
+  <div class="sec-title"><span>🛠️ Dịch Chuyển / Snap Nhanh Model Đang Chọn</span></div>
+  <div class="inspector-box">
+    <div class="btn-row" style="margin-bottom:6px">
+      <button id="btnSnapGround" class="primary" style="flex:1" title="Tự động hạ model đang chọn xuống chạm khít mặt đất COL3 bên dưới">⬇️ Snap Chạm Đất COL</button>
+      <button id="btnResetTransform" title="Khôi phục vị trí gốc của model">↺ Reset</button>
+    </div>
+    <div class="nudge-pad">
+      <button data-nudge="0,1,0,0">Bắc +N (1m)</button>
+      <button data-nudge="0,0,0.25,0">Lên +U (0.25m)</button>
+      <button data-nudge="0,0,0,15">Xoay +15°</button>
+      <button data-nudge="-1,0,0,0">Tây -E (1m)</button>
+      <button data-nudge="0,0,-0.25,0">Xuống -U (0.25m)</button>
+      <button data-nudge="1,0,0,0">Đông +E (1m)</button>
+      <button data-nudge="0,-1,0,0">Nam -N (1m)</button>
+      <button data-nudge="0,0,0,-15">Xoay -15°</button>
+      <button data-nudge="0,0,0,180">Quay 180°</button>
+    </div>
+  </div>
+
+  <div class="sec-title"><span>📌 Ghim Điểm Lỗi Vào Hồ Sơ Patch</span></div>
+  <div class="pin-form">
+    <select id="pinCategory">
+      <option value="FLOATING_MODEL">🟡 Hở model / Không chạm đất (Snap xuống đất)</option>
+      <option value="STUCK_PATH">🔴 Kẹt đường / Vướng Collision</option>
+      <option value="NO_ROUTE">🟠 Không có đường đi / Cần bắc cầu hoặc mở dốc</option>
+      <option value="VOID_FREEFALL">🟣 Chỗ trống / Khe hở làm rơi tự do (Void)</option>
+      <option value="RELOCATE_PROP">🔵 Dời vị trí / Xoay cụm đồ vật</option>
+    </select>
+    <input id="pinNote" placeholder="Ghi chú thêm (VD: hạ xuống 0.5m, dời sang phải 3m…)">
+    <button id="btnAddPin" class="primary">➕ Lưu Điểm Ghim Tại Tâm Ngắm (Phím F)</button>
+  </div>
+
+  <div class="divider"></div>
+  <div class="sec-title">
+    <span>📋 Danh Sách Đã Ghim Của Bạn (<span id="userPinCount">0</span>)</span>
+    <button id="btnExportPins" style="padding:3px 7px;font-size:10.5px" class="warn">📋 Copy JSON</button>
+  </div>
+  <div id="userPinList"></div>
+</aside>
+
+<div id="crosshair">
+  <div class="reticle"></div>
+  <small id="crosshairHint">Nhấn [F] bắn tia đo & ghim lỗi · [Space] Nhảy · [G] Bay Noclip</small>
+</div>
+
+<div id="compass">
+  <small style="top:3px">BẮC +N</small>
+  <span id="needle">↑</span>
+  <small style="bottom:3px">ĐÔNG +E →</small>
+</div>
+
+<div id="replayDock">
+  <div class="r-top">
+    <div class="r-title" id="replayTitle">🎬 Dựng Lại Hành Trình Bot</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="r-badge" id="replayBadge">LỖI</span>
+      <button id="btnCloseReplay" style="padding:2px 8px;font-size:11px">✕ Đóng</button>
+    </div>
+  </div>
+  <div class="r-telemetry">
+    <span id="replayStepText">Bước #0 / 0 · E=0, N=0, U=0m</span>
+    <strong id="replayEventText" style="color:#ffd97d">Đang khởi tạo…</strong>
+  </div>
+  <div class="r-controls">
+    <button id="btnReplayStart" title="Về bước xuất phát (Seed)">⏮ Đầu</button>
+    <button id="btnReplayPrev" title="Lùi 1 bước">⏪ -1</button>
+    <button id="btnReplayPlay" class="primary" title="Phát / Tạm dừng hành trình">⏸ Đang phát</button>
+    <button id="btnReplayNext" title="Tiến 1 bước">⏩ +1</button>
+    <button id="btnReplayPreFail" class="warn" title="Tua nhanh tới 4 bước trước khi Bot gặp lỗi để xem cận cảnh!">💥 Tới Lúc Gặp Lỗi</button>
+    <input type="range" id="replaySlider" min="0" max="100" step="0.1" value="0">
+    <button id="btnCamChase" class="active" title="Camera bám sau lưng Bot">🎥 Sau Lưng Bot</button>
+    <button id="btnCamPOV" title="Camera góc nhìn thứ nhất của Bot">👀 Mắt Bot</button>
+    <button id="btnCamOrbit" title="Góc nhìn toàn cảnh quỹ đạo">🛸 Tự Do</button>
+  </div>
+</div>
+
+<footer id="bottom">
+  <div id="walkstate">Đang khởi tạo cảnh 3D…</div>
+  <div class="legend-bar">
+    <span><i class="dot" style="background:#38d996"></i>Đi bộ OK</span>
+    <span><i class="dot" style="background:#f5b942"></i>Bậc cao / Phải nhảy</span>
+    <span><i class="dot" style="background:#f25c5c"></i>Vách dốc >45° / Đảo cô lập</span>
+    <span><i class="dot" style="background:#c966ff"></i>Ngược pháp tuyến / Lỗ Void</span>
+    <span><kbd>WASD</kbd> Đi · <kbd>Space</kbd> Nhảy · <kbd>G</kbd> Noclip · <kbd>V</kbd> X-Ray · <kbd>B</kbd> Swarm 86 Bot · <kbd>H</kbd> Thả Seed Mới · <kbd>F</kbd> Bắn Lỗi</span>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<div id="modalOverlay">
+  <div id="modalBox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2>📊 Báo Cáo Kiểm Toán Glitch 3D & JSON Patch</h2>
+      <div class="btn-row">
+        <button id="btnCopyModalJson" class="primary">📋 Copy JSON Patch</button>
+        <button id="btnDownloadModalJson">💾 Tải File .JSON</button>
+        <button id="btnCloseModal">Đóng ×</button>
+      </div>
+    </div>
+    <p style="color:#b5d1ce;margin:0 0 10px">Dữ liệu bên dưới bao gồm kết quả quét tự động của <strong>Swarm Capsule Bot + 5 Bộ Quét Hình Học</strong> cùng toàn bộ các điểm lỗi/dịch chuyển model mà bạn đã ghim trực tiếp trên bản đồ 3D.</p>
+    <pre id="modalPre"></pre>
+  </div>
+</div>
+
+<div id="loading">
+  <div class="spin"></div>
+  <strong>Đang nạp Eagle 3D Map Walker & Glitch Lab…</strong>
+  <small id="loadingText">Giải nén dữ liệu hình học & báo cáo kiểm toán vật lý…</small>
+</div>
+
+<script>/*__THREE_BUNDLE__*/</script>
+<script id="scene-data" type="application/json">/*__SCENE_DATA__*/{}</script>
+<script id="glitch-report-data" type="application/json">/*__GLITCH_REPORT_DATA__*/{}</script>
+<script>
+(async function(){
+'use strict';
+const T = window.THREE, $ = id => document.getElementById(id);
+
+async function unpackGzipB64(elId) {
+  const txt = $(elId).textContent.trim();
+  if (txt.startsWith('{') || txt.startsWith('[')) return JSON.parse(txt);
+  const packed = Uint8Array.from(atob(txt), c => c.charCodeAt(0));
+  const unpacked = await new Response(new Blob([packed]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return JSON.parse(unpacked);
+}
+
+const DATA = await unpackGzipB64('scene-data');
+const REPORT = await unpackGzipB64('glitch-report-data');
+
+const api = window.EAGLE_GLITCH_LAB = {
+  ready: false,
+  errors: [],
+  version: '2.1',
+  report: REPORT,
+  userPins: JSON.parse(localStorage.getItem('eagle_3d_user_pins_v1') || '[]'),
+  modelOffsets: {},
+  replayState: null
+};
+window.addEventListener('error', e => api.errors.push(e.message));
+
+let renderer, scene, camera, hemi, sun, waterMesh, selectionBox;
+let nearGroup, lodGroup, colWireGroup, xrayGroup, glitchMarkerGroup, heatmapGroup, routeGroup, foliageGroup, gridGroup, botGroup, replayGroup;
+let mode = 'orbit', night = false, selectedMesh = null, activeFilter = 'ALL';
+let lastTime = 0, frameCount = 0, frameTime = 0, down = null, dragging = false;
+
+const objects = [], colMeshes = [], textureCache = new Map(), keys = new Set();
+const pickRay = new T.Raycaster(), pointer = new T.Vector2();
+const orbit = { target: new T.Vector3(120, -40, -45), azimuth: -0.78, elevation: 0.62, distance: 620 };
+const player = {
+  x: 321, y: -93.1, z: -50, vz: 0,
+  yaw: -Math.PI / 2, pitch: 0,
+  grounded: false, jumping: false,
+  reason: 'Chưa đặt điểm',
+  wallHits: 0, edgeHits: 0, fallDistance: 0
+};
+const PHYS = { radius: 0.32, height: 1.72, eye: 1.58, maxStep: 0.45, maxDrop: 0.65, jumpStep: 0.95, slopeCos: Math.SQRT1_2, substep: 0.12, skin: 0.008 };
+const spatial = new Map(), triangles = [], CELL = 16, closest = new T.Vector3(), sample = new T.Vector3();
+const activeBots = [];
+let customSeedCount = 0;
+let lastProbedPoint = null;
+const replayState = api.replayState = {
+  active: false,
+  journey: null,
+  playing: true,
+  cursor: 0,
+  speed: 4.5, // steps per second
+  camMode: 'chase', // 'chase' | 'pov' | 'orbit'
+  heroMesh: null,
+  heroRing: null
+};
+
+function toast(msg) {
+  $('toast').textContent = msg;
+  $('toast').style.display = 'block';
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => $('toast').style.display = 'none', 4000);
+}
+
+function toGTA(x, y, z) {
+  return [+(x - 6500).toFixed(2), +(y - 3500).toFixed(2), +(z + 59.5).toFixed(2)];
+}
+
+function toGeo(model) {
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(model.positions, 3));
+  if (model.uvs?.length) g.setAttribute('uv', new T.Float32BufferAttribute(model.uvs, 2));
+  if (model.colors?.length) g.setAttribute('color', new T.Float32BufferAttribute(model.colors, 3));
+  if (model.indices?.length) g.setIndex(model.indices);
+  for (const q of model.groups || []) g.addGroup(q.start, q.count, q.materialIndex);
+  g.computeVertexNormals();
+  g.computeBoundingSphere();
+  g.computeBoundingBox();
+  return g;
+}
+
+async function loadTexture(name) {
+  if (textureCache.has(name)) return textureCache.get(name);
+  const source = DATA.textures?.[name];
+  if (!source) { textureCache.set(name, null); return null; }
+  const uri = typeof source === 'string' ? source : source.data || source.url;
+  const tex = await new Promise((resolve, reject) => new T.TextureLoader().load(uri, resolve, undefined, reject));
+  tex.colorSpace = T.SRGBColorSpace;
+  tex.flipY = false;
+  tex.wrapS = tex.wrapT = name.startsWith('mw_b') ? T.ClampToEdgeWrapping : T.RepeatWrapping;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  textureCache.set(name, tex);
+  return tex;
+}
+
+function addModel(model) {
+  const geometry = toGeo(model), hasColor = !!model.colors?.length;
+  const mats = (model.materials?.length ? model.materials : ['']).map(name => new T.MeshStandardMaterial({
+    map: textureCache.get(typeof name === 'string' ? name : name.texture) || null,
+    vertexColors: hasColor,
+    color: hasColor ? 0xffffff : (model.sector === 'M0' ? 0xd4c9a7 : 0x92a96f),
+    roughness: 0.95, metalness: 0, side: T.DoubleSide
+  }));
+  const mesh = new T.Mesh(geometry, mats);
+  mesh.name = model.name;
+  mesh.userData = { ...model, origPos: mesh.position.clone(), origRotZ: 0 };
+  (model.kind === 'foliage' ? foliageGroup : model.kind === 'lod' ? lodGroup : nearGroup).add(mesh);
+  objects.push(mesh);
+}
+
+function buildCollisionAndXray() {
+  const xrayPositions = [];
+  const xrayColors = [];
+  const waterLevel = Number(REPORT.water_level_m ?? -58);
+
+  for (const c of DATA.collision || []) {
+    const p = c.positions, ix = c.indices?.length ? c.indices : Array.from({ length: p.length / 3 }, (_, i) => i);
+    for (let k = 0; k < ix.length; k += 3) {
+      const a = new T.Vector3().fromArray(p, ix[k] * 3);
+      const b = new T.Vector3().fromArray(p, ix[k + 1] * 3);
+      const d = new T.Vector3().fromArray(p, ix[k + 2] * 3);
+      const cross = new T.Vector3().subVectors(b, a).cross(new T.Vector3().subVectors(d, a));
+      if (cross.lengthSq() < 1e-14) continue;
+      cross.normalize();
+      const surface = c.surfaces?.[k / 3];
+      const water = typeof surface === 'string' && /water|swim|lake/i.test(surface);
+      const walkable = cross.z >= PHYS.slopeCos && !water;
+      const tr = {
+        a, b, c: d, n: cross, id: c.id, sector: c.sector, surface, walkable,
+        triangle: new T.Triangle(a, b, d),
+        minX: Math.min(a.x, b.x, d.x), maxX: Math.max(a.x, b.x, d.x),
+        minY: Math.min(a.y, b.y, d.y), maxY: Math.max(a.y, b.y, d.y),
+        minZ: Math.min(a.z, b.z, d.z), maxZ: Math.max(a.z, b.z, d.z)
+      };
+      const index = triangles.length;
+      triangles.push(tr);
+      for (let gx = Math.floor(tr.minX / CELL); gx <= Math.floor(tr.maxX / CELL); gx++) {
+        for (let gy = Math.floor(tr.minY / CELL); gy <= Math.floor(tr.maxY / CELL); gy++) {
+          const key = gx + ',' + gy;
+          if (!spatial.has(key)) spatial.set(key, []);
+          spatial.get(key).push(index);
+        }
+      }
+
+      // Color-code for Live Walkability X-Ray Overlay (Key V)
+      const avgZ = (a.z + b.z + d.z) / 3;
+      let rCol = 0.22, gCol = 0.85, bCol = 0.58; // Walkable green
+      if (cross.z < -0.2) {
+        rCol = 0.82; gCol = 0.25; bCol = 0.98; // Inverted normal purple!
+      } else if (avgZ < waterLevel + 0.05) {
+        rCol = 0.20; gCol = 0.52; bCol = 0.88; // Underwater blue
+      } else if (cross.z < 0.58) {
+        rCol = 0.95; gCol = 0.26; bCol = 0.26; // Steep wall red (>54 deg)
+      } else if (cross.z < PHYS.slopeCos) {
+        rCol = 0.96; gCol = 0.72; bCol = 0.22; // Scramble slope yellow-orange (45..54 deg)
+      }
+      xrayPositions.push(a.x, a.y, a.z + 0.04, b.x, b.y, b.z + 0.04, d.x, d.y, d.z + 0.04);
+      xrayColors.push(rCol, gCol, bCol, rCol, gCol, bCol, rCol, gCol, bCol);
+    }
+
+    const wireMesh = new T.Mesh(toGeo(c), new T.MeshBasicMaterial({
+      color: c.sector === 'M0' ? 0x6ce0f0 : 0xf5c86c,
+      wireframe: true, transparent: true, opacity: 0.55, depthTest: false
+    }));
+    wireMesh.renderOrder = 7;
+    wireMesh.userData = { id: c.id, sector: c.sector, isCol: true };
+    colWireGroup.add(wireMesh);
+    colMeshes.push(wireMesh);
+  }
+
+  const xrayGeo = new T.BufferGeometry();
+  xrayGeo.setAttribute('position', new T.Float32BufferAttribute(xrayPositions, 3));
+  xrayGeo.setAttribute('color', new T.Float32BufferAttribute(xrayColors, 3));
+  const xrayMesh = new T.Mesh(xrayGeo, new T.MeshBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.62, side: T.DoubleSide, depthWrite: false
+  }));
+  xrayMesh.renderOrder = 6;
+  xrayGroup.add(xrayMesh);
+}
+
+function nearby(x, y, r = 0) {
+  const found = new Set();
+  for (let gx = Math.floor((x - r) / CELL); gx <= Math.floor((x + r) / CELL); gx++) {
+    for (let gy = Math.floor((y - r) / CELL); gy <= Math.floor((y + r) / CELL); gy++) {
+      for (const i of spatial.get(gx + ',' + gy) || []) found.add(i);
+    }
+  }
+  return found;
+}
+
+function triHeight(tr, x, y) {
+  const ax = tr.a.x, ay = tr.a.y, bx = tr.b.x, by = tr.b.y, cx = tr.c.x, cy = tr.c.y;
+  const denom = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+  if (Math.abs(denom) < 1e-10) return null;
+  const u = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / denom;
+  const v = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / denom;
+  if (u < -1e-6 || v < -1e-6 || u + v > 1 + 1e-6) return null;
+  return u * tr.a.z + v * tr.b.z + (1 - u - v) * tr.c.z;
+}
+
+function raycastColAll(x, y, zTop = 10000, zBottom = -10000) {
+  const hits = [];
+  for (const i of nearby(x, y)) {
+    const tr = triangles[i];
+    if (tr.maxZ < zBottom || tr.minZ > zTop) continue;
+    const z = triHeight(tr, x, y);
+    if (z !== null && z >= zBottom && z <= zTop) {
+      hits.push({ z, nz: tr.n.z, id: tr.id, sector: tr.sector, walkable: tr.walkable, index: i, tr });
+    }
+  }
+  hits.sort((a, b) => b.z - a.z);
+  return hits;
+}
+
+function support(x, y, refZ, maxDrop = PHYS.maxDrop, maxStep = PHYS.maxStep, allowScramble = false) {
+  let best = null;
+  const minCos = allowScramble ? 0.60 : PHYS.slopeCos;
+  const waterCut = Number(REPORT.water_level_m ?? -58) + 0.05;
+  for (const i of nearby(x, y)) {
+    const tr = triangles[i];
+    if (tr.n.z < minCos || tr.minZ > refZ + maxStep + 0.01 || tr.maxZ < refZ - maxDrop - 0.01) continue;
+    const z = triHeight(tr, x, y);
+    if (z === null || z < waterCut || z > refZ + maxStep + 0.01 || z < refZ - maxDrop - 0.01) continue;
+    if (!best || z > best.z) best = { z, nz: tr.n.z, id: tr.id, sector: tr.sector, surface: tr.surface, index: i };
+  }
+  return best;
+}
+
+function broadGround(x, y, z = null) {
+  return support(x, y, z == null ? 2000 : z, z == null ? 5000 : 18, z == null ? 0 : 4.5, true);
+}
+
+function wallAt(x, y, z) {
+  const radius = PHYS.radius - PHYS.skin;
+  for (const i of nearby(x, y, PHYS.radius)) {
+    const tr = triangles[i];
+    if (tr.walkable || tr.maxZ < z + 0.42 || tr.minZ > z + PHYS.height) continue;
+    for (const dz of [PHYS.radius + 0.1, PHYS.height * 0.55, PHYS.height - PHYS.radius]) {
+      sample.set(x, y, z + dz);
+      tr.triangle.closestPointToPoint(sample, closest);
+      if (sample.distanceToSquared(closest) < radius * radius) return { id: tr.id, triangle: i, nz: tr.n.z };
+    }
+  }
+  return null;
+}
+
+function placePlayer(x, y, z = null) {
+  const floor = broadGround(x, y, z);
+  if (!floor) {
+    // Even if there is no walkable floor, check if there is any COL hit or place at fallback Z so user can inspect!
+    const anyHits = raycastColAll(x, y);
+    const fallbackZ = anyHits.length ? anyHits[0].z : (z ?? -48);
+    Object.assign(player, { x, y, z: fallbackZ, grounded: false, reason: '⚠️ Điểm này không có mặt đi bộ chuẩn (nhấn G để bay Noclip)' });
+    updateCamera();
+    return true;
+  }
+  Object.assign(player, { x, y, z: floor.z, grounded: true, reason: `Đang đứng trên COL #${floor.id} (nz=${floor.nz.toFixed(2)})` });
+  updateCamera();
+  return true;
+}
+
+function tryStep(dx, dy, jumping = false) {
+  const nx = player.x + dx, ny = player.y + dy;
+  const maxStep = jumping ? PHYS.jumpStep : PHYS.maxStep;
+  const maxDrop = jumping ? 1.85 : PHYS.maxDrop;
+  const floor = support(nx, ny, player.z, maxDrop, maxStep, jumping);
+  if (!floor) {
+    player.reason = '🛑 Chặn bởi mép vực / nước / vách dốc >45° (Nhấn Space để nhảy hoặc G để bay qua)';
+    player.edgeHits++;
+    return false;
+  }
+  const wall = wallAt(nx, ny, floor.z);
+  if (wall) {
+    player.reason = `🧱 Chặn bởi tường / trần COL #${wall.id} (nz=${wall.nz.toFixed(2)})`;
+    player.wallHits++;
+    return false;
+  }
+  player.x = nx; player.y = ny; player.z = floor.z;
+  player.grounded = true;
+  player.reason = `Đang đi trên COL #${floor.id} (nz=${floor.nz.toFixed(2)})`;
+  return true;
+}
+
+function moveWorld(dx, dy, jumping = false) {
+  const dist = Math.hypot(dx, dy);
+  if (!Number.isFinite(dist) || dist < 1e-6) return 0;
+  const steps = Math.max(1, Math.ceil(dist / PHYS.substep));
+  let moved = 0;
+  for (let k = 0; k < steps; k++) {
+    const sx = dx / steps, sy = dy / steps;
+    if (tryStep(sx, sy, jumping)) {
+      moved += Math.hypot(sx, sy);
+    } else {
+      // Wall slide along X or Y
+      let slid = false;
+      if (Math.abs(sx) > 1e-5 && tryStep(sx, 0, jumping)) { moved += Math.abs(sx); slid = true; }
+      if (Math.abs(sy) > 1e-5 && tryStep(0, sy, jumping)) { moved += Math.abs(sy); slid = true; }
+      if (!slid) break;
+    }
+  }
+  updateCamera();
+  return moved;
+}
+
+function updateCamera() {
+  if (mode === 'walk' || mode === 'noclip') {
+    camera.position.set(player.x, player.y, player.z + PHYS.eye);
+    camera.lookAt(
+      player.x + Math.cos(player.yaw) * Math.cos(player.pitch),
+      player.y + Math.sin(player.yaw) * Math.cos(player.pitch),
+      player.z + PHYS.eye + Math.sin(player.pitch)
+    );
+  } else {
+    const horiz = Math.cos(orbit.elevation) * orbit.distance;
+    camera.position.set(
+      orbit.target.x + Math.cos(orbit.azimuth) * horiz,
+      orbit.target.y + Math.sin(orbit.azimuth) * horiz,
+      orbit.target.z + Math.sin(orbit.elevation) * orbit.distance
+    );
+    camera.lookAt(orbit.target);
+  }
+  $('needle').style.transform = 'rotate(' + ((mode === 'orbit' ? orbit.azimuth : player.yaw) * 180 / Math.PI + 90) + 'deg)';
+}
+
+function setMode(next) {
+  if (next === 'walk' && mode === 'orbit') {
+    placePlayer(player.x, player.y, player.z);
+  }
+  mode = next;
+  keys.clear();
+  $('btnModeOrbit').classList.toggle('active', mode === 'orbit');
+  $('btnModeWalk').classList.toggle('active', mode === 'walk');
+  $('btnModeNoclip').classList.toggle('active', mode === 'noclip');
+  $('modeBadge').textContent = mode.toUpperCase();
+  $('crosshair').style.display = (mode === 'walk' || mode === 'noclip') ? 'block' : 'none';
+  if (mode === 'orbit' && document.pointerLockElement) document.exitPointerLock();
+  updateCamera();
+}
+
+// Build 3D Glitch Markers, Floating Gap Rulers, Heatmap & Chokepoint Bridges
+function buildDiagnosticVisuals() {
+  const sevColors = { high: 0xff5252, medium: 0xffbe45, low: 0x52e0b8 };
+
+  for (const g of REPORT.glitches || []) {
+    const [gx, gy, gz] = g.pos;
+    const color = sevColors[g.severity] || 0xffbe45;
+
+    // Glowing vertical beacon pillar + diamond head
+    const pillarH = g.type === 'WALKABILITY_BARRIER' ? 18 : 9;
+    const pillar = new T.Mesh(
+      new T.CylinderGeometry(0.18, 0.18, pillarH, 8),
+      new T.MeshBasicMaterial({ color, transparent: true, opacity: 0.75 })
+    );
+    pillar.rotation.x = Math.PI / 2;
+    pillar.position.set(gx, gy, gz + pillarH / 2);
+
+    const head = new T.Mesh(
+      new T.OctahedronGeometry(g.severity === 'high' ? 1.45 : 1.05, 0),
+      new T.MeshBasicMaterial({ color, wireframe: false })
+    );
+    head.position.set(gx, gy, gz + pillarH + 0.8);
+    head.userData = { glitch: g };
+    pillar.userData = { glitch: g };
+    glitchMarkerGroup.add(pillar, head);
+
+    // If FLOATING_MODEL, draw a bright yellow/red gap ruler from ground up to floating base!
+    if (g.type === 'FLOATING_MODEL' && g.max_gap_m > 0.15) {
+      const gap = g.max_gap_m;
+      const ruler = new T.Mesh(
+        new T.BoxGeometry(0.45, 0.45, gap),
+        new T.MeshBasicMaterial({ color: 0xffe600, wireframe: true })
+      );
+      ruler.position.set(gx, gy, gz - gap / 2);
+      glitchMarkerGroup.add(ruler);
+    }
+
+    // If WALKABILITY_BARRIER, draw a glowing magenta/cyan bridge vector showing the exact chokepoint cut!
+    if (g.type === 'WALKABILITY_BARRIER' && g.from_pos && g.to_pos) {
+      const p1 = new T.Vector3(...g.from_pos); p1.z += 1.2;
+      const p2 = new T.Vector3(...g.to_pos); p2.z += 1.2;
+      const mid = p1.clone().lerp(p2, 0.5); mid.z += Math.min(25, p1.distanceTo(p2) * 0.18);
+      const curve = new T.QuadraticBezierCurve3(p1, mid, p2);
+      const tube = new T.Mesh(
+        new T.TubeGeometry(curve, 24, 0.55, 8, false),
+        new T.MeshBasicMaterial({ color: 0xff44cc, transparent: true, opacity: 0.88, depthTest: false })
+      );
+      tube.renderOrder = 12;
+      routeGroup.add(tube);
+    }
+  }
+
+  // Build Reachability Point Cloud Heatmap (Green = Reachable from Mondstadt Gate, Red = Isolated Walkable Island)
+  const reachPts = REPORT.heatmap?.reachable || [];
+  const isoPts = REPORT.heatmap?.isolated || [];
+  if (reachPts.length) {
+    const posArr = new Float32Array(reachPts.length * 3);
+    reachPts.forEach((p, i) => { posArr[i * 3] = p[0]; posArr[i * 3 + 1] = p[1]; posArr[i * 3 + 2] = p[2] + 0.35; });
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.BufferAttribute(posArr, 3));
+    const ptsMesh = new T.Points(geo, new T.PointsMaterial({ color: 0x32e8a0, size: 3.2, sizeAttenuation: true, transparent: true, opacity: 0.78 }));
+    heatmapGroup.add(ptsMesh);
+  }
+  if (isoPts.length) {
+    const posArr = new Float32Array(isoPts.length * 3);
+    isoPts.forEach((p, i) => { posArr[i * 3] = p[0]; posArr[i * 3 + 1] = p[1]; posArr[i * 3 + 2] = p[2] + 0.35; });
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.BufferAttribute(posArr, 3));
+    const ptsMesh = new T.Points(geo, new T.PointsMaterial({ color: 0xff5555, size: 3.5, sizeAttenuation: true, transparent: true, opacity: 0.82 }));
+    heatmapGroup.add(ptsMesh);
+  }
+
+  // Build Bot Route lines & Multi-Seed Swarm Radial Web
+  for (const r of (REPORT.walkability_summary?.bot_routes || [])) {
+    if (!r.points?.length) continue;
+    const pts = r.points.map(p => new T.Vector3(p[0], p[1], p[2] + 0.55));
+    const geo = new T.BufferGeometry().setFromPoints(pts);
+    const col = r.status === 'pass' ? 0x45f2a7 : 0xff7b54;
+    const line = new T.Line(geo, new T.LineBasicMaterial({ color: col, depthTest: false, transparent: true, opacity: 0.92 }));
+    line.renderOrder = 10;
+    routeGroup.add(line);
+  }
+  for (const j of (REPORT.walkability_summary?.swarm_journeys || [])) {
+    if (j.kind !== 'RADIAL_SWARM' || !j.frames?.length) continue;
+    const pts = j.frames.map(f => new T.Vector3(f[0], f[1], f[2] + 0.35));
+    const geo = new T.BufferGeometry().setFromPoints(pts);
+    const col = j.status === 'pass' ? 0x22b573 : 0xe05263;
+    const line = new T.Line(geo, new T.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45 }));
+    routeGroup.add(line);
+  }
+}
+
+const STATE_COLORS = {
+  0: 0x2ee89c, // WALK_OK (Green)
+  1: 0xffd166, // JUMP_SCRAMBLE (Gold)
+  2: 0xd946ef, // VOID_FREEFALL (Neon Purple)
+  3: 0x38bdf8, // WATER_SUBMERGED (Water Blue)
+  4: 0xff4757, // STEEP_WALL (Red)
+  5: 0xff7f50, // STEP_LIP (Coral Red)
+  6: 0xc084fc  // INVERTED_COL (Violet)
+};
+
+// Multi-Seed Swarm Spawner (Spawns all 86+ autonomous bots across 10 seeds!)
+function spawnSwarmBots(filterMode = 'ALL_SWARM') {
+  while (botGroup.children.length) botGroup.remove(botGroup.children[0]);
+  activeBots.length = 0;
+
+  const ws = REPORT.walkability_summary || {};
+  const seeds = ws.swarm_seeds || [];
+  // Render Seed Beacon Pillars
+  for (const s of seeds) {
+    const [sx, sy, sz] = s.pos;
+    const beacon = new T.Mesh(
+      new T.ConeGeometry(1.3, 4.2, 8),
+      new T.MeshBasicMaterial({ color: 0xffdd57, wireframe: true })
+    );
+    beacon.rotation.x = Math.PI / 2;
+    beacon.position.set(sx, sy, sz + 2.5);
+    botGroup.add(beacon);
+  }
+
+  const allJourneys = ws.swarm_journeys || [];
+  const list = allJourneys.filter(j => {
+    if (!filterMode || filterMode === 'ALL_SWARM') return true;
+    if (filterMode === 'TARGET_ROUTES') return j.kind === 'TARGET_ROUTE';
+    if (filterMode === 'ALL_FAILED') return j.status === 'failed';
+    if (filterMode === 'ALL_INTENDED') return j.status === 'intended';
+    return j.seed_id === filterMode;
+  });
+
+  const cylGeo = new T.CylinderGeometry(0.45, 0.45, 1.85, 10);
+  list.forEach(j => {
+    const frames = j.frames || [];
+    if (frames.length < 2) return;
+    const isTarget = j.kind === 'TARGET_ROUTE';
+    const baseCol = j.status === 'pass' ? 0x2ee89c : (isTarget ? 0xff5252 : 0xff9f43);
+    const mat = new T.MeshStandardMaterial({
+      color: baseCol,
+      emissive: j.status === 'pass' ? 0x0a2e1f : 0x3a1010,
+      roughness: 0.3
+    });
+    const body = new T.Mesh(cylGeo, mat);
+    body.rotation.x = Math.PI / 2;
+    if ( isTarget ) body.scale.set(1.25, 1.25, 1.25);
+    const f0 = frames[0];
+    body.position.set(f0[0], f0[1], f0[2] + 0.95);
+    body.userData = { journey: j };
+    botGroup.add(body);
+    activeBots.push({
+      journey: j,
+      mesh: body,
+      frames,
+      segIdx: 0,
+      segT: 0,
+      speed: isTarget ? 18.0 : 12.5
+    });
+  });
+  $('kpiSwarmCount').textContent = allJourneys.length;
+  toast(`🐝 Đã thả ${activeBots.length} Bot Swarm Đa Hạt Giống! Nhấp vào bất kỳ Bot nào để Dựng Lại Hành Trình (Replay DVR).`);
+}
+
+function updateSwarmBots(dt) {
+  for (const bot of activeBots) {
+    const frames = bot.frames;
+    if (bot.segIdx >= frames.length - 1) {
+      bot.segIdx = 0;
+      bot.segT = 0;
+    }
+    const a = frames[bot.segIdx];
+    const b = frames[bot.segIdx + 1];
+    const segLen = Math.max(0.15, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    bot.segT += (bot.speed * dt) / segLen;
+    while (bot.segT >= 1.0 && bot.segIdx < frames.length - 1) {
+      bot.segT -= 1.0;
+      bot.segIdx++;
+      if (bot.segIdx >= frames.length - 1) {
+        bot.segIdx = 0;
+        bot.segT = 0;
+        break;
+      }
+    }
+    const pA = frames[bot.segIdx];
+    const pB = frames[Math.min(frames.length - 1, bot.segIdx + 1)];
+    const x = pA[0] + (pB[0] - pA[0]) * bot.segT;
+    const y = pA[1] + (pB[1] - pA[1]) * bot.segT;
+    const z = pA[2] + (pB[2] - pA[2]) * bot.segT;
+    bot.mesh.position.set(x, y, z + 0.95);
+    const stCode = pB[5] || 0;
+    bot.mesh.material.color.setHex(STATE_COLORS[stCode] || 0x2ee89c);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Live Custom Seed Spawner (Key H): Plant a new Seed & fan out 24 radial bots!
+// ---------------------------------------------------------------------------
+function spawnCustomSeedAtCursor() {
+  let sx = player.x, sy = player.y, sz = player.z;
+  if (mode === 'orbit') {
+    const probe = fireGlitchGun();
+    if (probe && probe.pos) {
+      [sx, sy, sz] = probe.pos;
+    } else {
+      sx = orbit.target.x; sy = orbit.target.y; sz = orbit.target.z;
+    }
+  }
+  const groundHits = raycastColAll(sx, sy, sz + 25.0, sz - 60.0);
+  if (groundHits.length) sz = groundHits[0].z;
+
+  customSeedCount++;
+  const sid = `SEED-CUSTOM-${customSeedCount}`;
+  const sname = `Hạt giống Tùy chỉnh #${customSeedCount} (E=${sx.toFixed(0)}, N=${sy.toFixed(0)})`;
+  const ws = REPORT.walkability_summary;
+  ws.swarm_seeds = ws.swarm_seeds || [];
+  ws.swarm_journeys = ws.swarm_journeys || [];
+  ws.swarm_seeds.push({ seed_id: sid, name: sname, pos: [+sx.toFixed(2), +sy.toFixed(2), +sz.toFixed(2)] });
+
+  const waterLvl = Number(REPORT.water_level_m ?? -58);
+  const numDirs = 24;
+  const stepLen = 3.0;
+  const maxSteps = 55;
+  let newFailedJourney = null;
+
+  for (let d = 0; d < numDirs; d++) {
+    const deg = d * (360 / numDirs);
+    const rad = (deg * Math.PI) / 180;
+    const botId = `SWARM-${String(ws.swarm_journeys.length + 1).padStart(3, '0')}`;
+    let cx = sx, cy = sy, cz = sz, heading = rad;
+    const frames = [[+cx.toFixed(2), +cy.toFixed(2), +cz.toFixed(2), 0, 0, 0, `Xuất phát từ ${sid}`]];
+    let failIdx = -1, outcome = 'PATROL_OK', outcomeVi = `Tuần tra 360° hướng ${deg}° thông suốt`, distWalked = 0;
+    let failPos = [+cx.toFixed(2), +cy.toFixed(2), +cz.toFixed(2)];
+
+    for (let s = 1; s <= maxSteps; s++) {
+      let chosen = null, firstFail = null;
+      for (const steer of [0, 0.45, -0.45]) {
+        const ang = heading + steer;
+        const nx = cx + Math.cos(ang) * stepLen;
+        const ny = cy + Math.sin(ang) * stepLen;
+        const hits = raycastColAll(nx, ny, cz + 7.0, cz - 22.0);
+        if (!hits.length) {
+          if (!firstFail) firstFail = ['MISSING_COL_VOID', nx, ny, cz, 90, 0, 'Khe rỗng thiếu .COL3 (Rơi tự do)'];
+          continue;
+        }
+        let bestH = hits[0];
+        for (const h of hits) if (Math.abs(h.z - cz) < Math.abs(bestH.z - cz)) bestH = h;
+        const hz = bestH.z, hnz = bestH.nz;
+        const slopeDeg = +(Math.acos(Math.max(-1, Math.min(1, Math.abs(hnz)))) * 180 / Math.PI).toFixed(1);
+        const dz = +(hz - cz).toFixed(2);
+        if (hnz < -0.3) {
+          if (!firstFail) firstFail = ['INVERTED_COL_NORMAL', nx, ny, hz, slopeDeg, dz, `Mặt .COL3 ngược pháp tuyến (nz=${hnz.toFixed(2)})`];
+          continue;
+        }
+        if (hz < waterLvl + 0.05) {
+          if (!firstFail) firstFail = ['SUBMERGED_UNDER_WATER', nx, ny, hz, slopeDeg, dz, `Ngập dưới mực nước ${waterLvl}m (Z=${hz.toFixed(2)}m)`];
+          continue;
+        }
+        if (dz < -(stepLen * 1.15 + 1.45)) {
+          if (!firstFail) firstFail = ['VOID_CLIFF_DROP', nx, ny, hz, slopeDeg, dz, `Vực sụt đột ngột (dZ=${dz}m)`];
+          continue;
+        }
+        if (dz > stepLen * 1.1 + PHYS.jumpStep) {
+          if (!firstFail) firstFail = ['STEP_LIP_BLOCKER', nx, ny, hz, slopeDeg, dz, `Gờ bậc cao / Tường chắn (dZ=+${dz}m)`];
+          continue;
+        }
+        if (hnz < 0.58) {
+          if (!firstFail) firstFail = ['STEEP_SLOPE_BARRIER', nx, ny, hz, slopeDeg, dz, `Vách dốc đứng ${slopeDeg}° chặn ngang`];
+          continue;
+        }
+        const jump = dz > stepLen * 0.9 + PHYS.maxStep || hnz < PHYS.slopeCos;
+        chosen = [nx, ny, hz, slopeDeg, dz, ang, jump];
+        break;
+      }
+      if (chosen) {
+        const [nx, ny, hz, slopeDeg, dz, ang, jump] = chosen;
+        cx = nx; cy = ny; cz = hz;
+        heading = 0.7 * heading + 0.3 * ang;
+        distWalked += stepLen;
+        frames.push([+cx.toFixed(2), +cy.toFixed(2), +cz.toFixed(2), slopeDeg, dz, jump ? 1 : 0, jump ? `Nhảy vượt dốc/bậc (${slopeDeg}°)` : `Đi bộ êm (${slopeDeg}°)`]);
+      } else {
+        const [fType, fx, fy, fz, fSlope, fDz, fMsg] = firstFail || ['STEEP_SLOPE_BARRIER', cx, cy, cz, 75, 0, 'Bị chặn'];
+        outcome = fType; outcomeVi = fMsg; failIdx = frames.length;
+        failPos = [+fx.toFixed(2), +fy.toFixed(2), +fz.toFixed(2)];
+        const stCode = fType === 'INVERTED_COL_NORMAL' ? 6 : (fType.includes('VOID') ? 2 : (fType.includes('WATER') ? 3 : 4));
+        frames.push([+fx.toFixed(2), +fy.toFixed(2), +fz.toFixed(2), fSlope, fDz, stCode, `❌ ${fMsg}`]);
+        for (let k = 1; k <= 3; k++) {
+          const dropZ = stCode === 2 || stCode === 6 ? -3.5 * k : (stCode === 3 ? -0.3 * k : 0);
+          const backXY = stCode === 4 ? -0.5 * k : 0.3 * k;
+          frames.push([
+            +(fx + Math.cos(heading) * backXY).toFixed(2),
+            +(fy + Math.sin(heading) * backXY).toFixed(2),
+            +(fz + dropZ).toFixed(2),
+            fSlope, dropZ, stCode,
+            stCode === 2 ? `💥 Rơi tự do xuống hố (${dropZ.toFixed(1)}m)` : `Sau va chạm (#${k})`
+          ]);
+        }
+        break;
+      }
+    }
+    const jObj = {
+      bot_id: botId,
+      seed_id: sid,
+      seed_name: sname,
+      name: `${sid} · Tia ${deg}°`,
+      kind: 'RADIAL_SWARM',
+      status: outcome === 'PATROL_OK' ? 'pass' : 'failed',
+      outcome,
+      outcome_vi: outcomeVi,
+      distance_m: +distWalked.toFixed(1),
+      fail_step_idx: failIdx,
+      fail_pos: failPos,
+      frames
+    };
+    ws.swarm_journeys.push(jObj);
+    if (!newFailedJourney && jObj.status === 'failed') newFailedJourney = jObj;
+  }
+
+  // Add option to dropdown & refresh
+  const sel = $('swarmSeedSelect');
+  const opt = document.createElement('option');
+  opt.value = sid;
+  opt.textContent = `🌱 ${sid}: ${sname} (24 Bot)`;
+  sel.appendChild(opt);
+  sel.value = sid;
+  renderSwarmJourneyList(sid);
+  spawnSwarmBots(sid);
+  if (newFailedJourney) startBotJourneyReplay(newFailedJourney, 'orbit');
+  toast(`🌱 Đã thả ${sid} tại (E=${sx.toFixed(1)}, N=${sy.toFixed(1)}) và tung 24 Bot dò 360°!`);
+}
+
+// ---------------------------------------------------------------------------
+// Step-by-Step 3D Journey Reconstruction & DVR Replay System
+// ---------------------------------------------------------------------------
+function startBotJourneyReplay(journey, camMode = null) {
+  if (!journey || !journey.frames?.length) return;
+  while (replayGroup.children.length) replayGroup.remove(replayGroup.children[0]);
+
+  replayState.active = true;
+  replayState.journey = journey;
+  replayState.playing = true;
+  if (camMode) replayState.camMode = camMode;
+  // Start replay either at step 0 or, if long route, 15 steps before failure so user sees the walk + crash!
+  const frames = journey.frames;
+  replayState.cursor = journey.fail_step_idx > 18 ? Math.max(0, journey.fail_step_idx - 16) : 0;
+
+  // 1) Build 3D Breadcrumb Trail & Step Spheres
+  const linePts = frames.map(f => new T.Vector3(f[0], f[1], f[2] + 0.35));
+  const pathLine = new T.Line(
+    new T.BufferGeometry().setFromPoints(linePts),
+    new T.LineBasicMaterial({ color: 0xffe680, depthTest: false, transparent: true, opacity: 0.95 })
+  );
+  pathLine.renderOrder = 16;
+  replayGroup.add(pathLine);
+
+  const stepGeo = new T.SphereGeometry(0.38, 10, 8);
+  frames.forEach((f, idx) => {
+    const stCode = f[5] || 0;
+    const isFail = idx === journey.fail_step_idx;
+    const sph = new T.Mesh(
+      isFail ? new T.OctahedronGeometry(1.15, 1) : stepGeo,
+      new T.MeshBasicMaterial({
+        color: STATE_COLORS[stCode] || 0x2ee89c,
+        depthTest: false,
+        transparent: true,
+        opacity: isFail ? 1.0 : 0.85
+      })
+    );
+    sph.position.set(f[0], f[1], f[2] + (isFail ? 0.9 : 0.35));
+    sph.renderOrder = 17;
+    replayGroup.add(sph);
+  });
+
+  // 2) Create Hero Replay Bot Capsule + Beacon Ring
+  const heroGroup = new T.Group();
+  const body = new T.Mesh(
+    new T.CylinderGeometry(0.55, 0.55, 1.9, 16),
+    new T.MeshStandardMaterial({ color: 0x00f5d4, emissive: 0x004438, roughness: 0.2 })
+  );
+  body.rotation.x = Math.PI / 2;
+  body.position.z = 0.95;
+  const visor = new T.Mesh(
+    new T.BoxGeometry(0.7, 0.45, 0.35),
+    new T.MeshBasicMaterial({ color: 0xffea79 })
+  );
+  visor.position.set(0.38, 0, 1.45);
+  const ring = new T.Mesh(
+    new T.RingGeometry(0.95, 1.35, 24),
+    new T.MeshBasicMaterial({ color: 0xffe680, side: T.DoubleSide, depthTest: false })
+  );
+  ring.position.z = 0.12;
+  ring.renderOrder = 19;
+  heroGroup.add(body, visor, ring);
+  replayGroup.add(heroGroup);
+  replayState.heroMesh = heroGroup;
+  replayState.heroBody = body;
+
+  // 3) Update Replay DVR Dock UI
+  $('replayDock').style.display = 'block';
+  $('replayTitle').textContent = `🎬 Dựng Lại Hành Trình: [${journey.bot_id}] ${journey.name}`;
+  const badge = $('replayBadge');
+  if (journey.status === 'pass') {
+    badge.className = 'r-badge ok';
+    badge.textContent = `✅ THÔNG SUỐT (${journey.distance_m}m)`;
+  } else {
+    badge.className = 'r-badge';
+    badge.textContent = `❌ ${journey.outcome} (Bước #${journey.fail_step_idx + 1}/${frames.length})`;
+  }
+  const slider = $('replaySlider');
+  slider.max = Math.max(1, frames.length - 1);
+  slider.value = replayState.cursor;
+  $('btnReplayPlay').textContent = '⏸ Tạm dừng';
+  updateReplayCamButtons();
+  applyReplayFrame(replayState.cursor);
+
+  // Also populate the right-side Inspector with this Bot's diagnosis
+  const fp = journey.fail_pos || frames[frames.length - 1];
+  const gta = toGTA(fp[0], fp[1], fp[2]);
+  $('inspTitle').textContent = `🤖 ${journey.bot_id} · ${journey.name}`;
+  $('inspENU').textContent = `${fp[0].toFixed(2)}, ${fp[1].toFixed(2)}, ${fp[2].toFixed(2)}`;
+  $('inspGTA').textContent = `${gta[0]}, ${gta[1]}, ${gta[2]}`;
+  $('inspDFF').textContent = `Seed: ${journey.seed_name}`;
+  $('inspCOL').textContent = `Quãng đường đã đi: ${journey.distance_m}m (${frames.length} bước)`;
+  $('inspSlope').textContent = journey.outcome;
+  $('inspGap').textContent = journey.fail_step_idx >= 0 ? `Gặp lỗi tại Bước #${journey.fail_step_idx + 1}` : 'An toàn';
+  $('inspDiagnosis').innerHTML = `<strong>Chẩn đoán Hành trình Bot:</strong> ${journey.outcome_vi}<br><strong style="color:#ffd97d">Mẹo:</strong> Dùng thanh tua <strong>Replay DVR</strong> phía dưới màn hình hoặc chọn <strong>🎥 Sau Lưng Bot / 👀 Mắt Bot</strong> để xem tận mắt khoảnh khắc Bot bước đi và gặp lỗi!`;
+}
+
+function updateReplayCamButtons() {
+  $('btnCamChase').classList.toggle('active', replayState.camMode === 'chase');
+  $('btnCamPOV').classList.toggle('active', replayState.camMode === 'pov');
+  $('btnCamOrbit').classList.toggle('active', replayState.camMode === 'orbit');
+}
+
+function applyReplayFrame(cursorVal) {
+  const j = replayState.journey;
+  if (!j || !j.frames?.length) return;
+  const frames = j.frames;
+  const maxIdx = frames.length - 1;
+  const clamped = Math.max(0, Math.min(maxIdx, cursorVal));
+  const i0 = Math.floor(clamped);
+  const i1 = Math.min(maxIdx, i0 + 1);
+  const t = clamped - i0;
+
+  const f0 = frames[i0], f1 = frames[i1];
+  const x = f0[0] + (f1[0] - f0[0]) * t;
+  const y = f0[1] + (f1[1] - f0[1]) * t;
+  const z = f0[2] + (f1[2] - f0[2]) * t;
+
+  // Compute yaw heading from step direction
+  let lookNext = frames[Math.min(maxIdx, i0 + 1)];
+  let lookPrev = frames[Math.max(0, i0 - 1)];
+  let dx = lookNext[0] - lookPrev[0], dy = lookNext[1] - lookPrev[1];
+  const yaw = (Math.abs(dx) + Math.abs(dy) > 0.01) ? Math.atan2(dy, dx) : 0;
+
+  if (replayState.heroMesh) {
+    replayState.heroMesh.position.set(x, y, z);
+    replayState.heroMesh.rotation.z = yaw;
+    const stCode = f0[5] || 0;
+    replayState.heroBody.material.color.setHex(STATE_COLORS[stCode] || 0x00f5d4);
+  }
+
+  $('replaySlider').value = clamped;
+  $('replayStepText').textContent = `Bước #${i0 + 1} / ${frames.length} · E=${x.toFixed(2)}, N=${y.toFixed(2)}, U=${z.toFixed(2)}m · Dốc ${f0[3]}° · dZ=${f0[4] >= 0 ? '+' : ''}${f0[4]}m`;
+  $('replayEventText').textContent = f0[6] || 'Đang di chuyển…';
+  $('replayEventText').style.color = (f0[5] >= 2) ? '#ff8a8a' : (f0[5] === 1 ? '#ffd97d' : '#80f5d4');
+
+  // Drive camera if in Chase or POV mode
+  if (mode === 'orbit') {
+    if (replayState.camMode === 'chase') {
+      const camX = x - Math.cos(yaw) * 8.5;
+      const camY = y - Math.sin(yaw) * 8.5;
+      const camZ = z + 3.8;
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(x + Math.cos(yaw) * 3.0, y + Math.sin(yaw) * 3.0, z + 1.0);
+    } else if (replayState.camMode === 'pov') {
+      camera.position.set(x, y, z + 1.62);
+      camera.lookAt(x + Math.cos(yaw) * 10.0, y + Math.sin(yaw) * 10.0, z + 1.25);
+    } else if (replayState.playing) {
+      orbit.target.set(x, y, z + 1.0);
+      updateCamera();
+    }
+  }
+}
+
+function updateReplayDVR(dt) {
+  if (!replayState.active || !replayState.playing || !replayState.journey) return;
+  const maxIdx = replayState.journey.frames.length - 1;
+  replayState.cursor += replayState.speed * dt;
+  if (replayState.cursor > maxIdx) {
+    replayState.cursor = 0; // Loop smoothly
+  }
+  applyReplayFrame(replayState.cursor);
+}
+
+// Teleport / Focus on a specific Glitch or Coordinate
+function focusOnGlitch(g) {
+  const [gx, gy, gz] = g.pos;
+  if (g.model_id) {
+    const m = objects.find(o => o.userData.id === g.model_id && o.userData.kind === 'near');
+    if (m) selectMesh(m);
+  }
+  if (mode === 'walk' || mode === 'noclip') {
+    // Place player 6m away looking directly at the glitch!
+    const viewX = gx - 5.5, viewY = gy - 5.5;
+    if (mode === 'noclip') {
+      player.x = viewX; player.y = viewY; player.z = gz + 1.5;
+    } else {
+      placePlayer(viewX, viewY, gz + 2.0);
+    }
+    player.yaw = Math.atan2(gy - player.y, gx - player.x);
+    player.pitch = -0.12;
+    updateCamera();
+  } else {
+    orbit.target.set(gx, gy, gz);
+    orbit.distance = g.type === 'WALKABILITY_BARRIER' ? 160 : 32;
+    orbit.elevation = 0.48;
+    updateCamera();
+  }
+  // Fill right-side inspector with this glitch's details
+  const gta = toGTA(gx, gy, gz);
+  $('inspTitle').textContent = `${g.glitch_id} · ${g.title}`;
+  $('inspENU').textContent = `${gx.toFixed(2)}, ${gy.toFixed(2)}, ${gz.toFixed(2)}`;
+  $('inspGTA').textContent = `${gta[0]}, ${gta[1]}, ${gta[2]}`;
+  $('inspDFF').textContent = `${g.model_name || '—'} (#${g.model_id || '—'})`;
+  $('inspCOL').textContent = `Sector ${g.sector || 'M1'}`;
+  $('inspSlope').textContent = g.nz !== undefined ? `nz = ${g.nz}` : (g.type || '—');
+  $('inspGap').textContent = g.max_gap_m !== undefined ? `${g.max_gap_m} m (min ${g.min_gap_m} m)` : (g.gap_dist_m ? `Khe đứt ${g.gap_dist_m} m` : '—');
+  $('inspDiagnosis').innerHTML = `<strong>Chẩn đoán:</strong> ${g.detail}<br><strong style="color:#ffd97d">Gợi ý sửa:</strong> ${g.fix_hint || 'Kiểm tra trực tiếp tại tọa độ này.'}`;
+  lastProbedPoint = { pos: [gx, gy, gz], gta_pos: gta, model_id: g.model_id, model_name: g.model_name, gap_m: g.max_gap_m || 0 };
+}
+
+function selectMesh(mesh) {
+  selectedMesh = mesh;
+  if (selectionBox) { scene.remove(selectionBox); selectionBox.dispose(); }
+  selectionBox = new T.BoxHelper(mesh, 0xffdd78);
+  scene.add(selectionBox);
+}
+
+// Crosshair / Pointer Raycast Glitch Gun (Key F or Right Click)
+function fireGlitchGun(clientX = null, clientY = null) {
+  if (clientX !== null && clientY !== null && mode === 'orbit') {
+    pointer.set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1);
+  } else {
+    pointer.set(0, 0); // Center crosshair
+  }
+  pickRay.setFromCamera(pointer, camera);
+  const visibleTargets = [...nearGroup.children, ...foliageGroup.children];
+  const hit = pickRay.intersectObjects(visibleTargets, true)[0];
+  if (!hit) {
+    toast('Không bắn trúng bề mặt nào tại tâm ngắm!');
+    return null;
+  }
+  const pt = hit.point;
+  let rootMesh = hit.object;
+  while (rootMesh.parent && rootMesh.parent !== nearGroup && rootMesh.parent !== foliageGroup) {
+    rootMesh = rootMesh.parent;
+  }
+  if (rootMesh.userData?.id) selectMesh(rootMesh);
+
+  // Measure vertical ground support & gap right at hit point
+  const colHits = raycastColAll(pt.x, pt.y, pt.z + 1.5, pt.z - 50.0);
+  const topCol = colHits[0] || null;
+  const gap = topCol ? +(pt.z - topCol.z).toFixed(3) : 999.0;
+  const gta = toGTA(pt.x, pt.y, pt.z);
+  const slopeDeg = topCol ? +(Math.acos(Math.max(-1, Math.min(1, topCol.nz))) * 180 / Math.PI).toFixed(1) : null;
+
+  $('inspTitle').textContent = `🎯 Đã đo tại tâm ngắm · ${rootMesh.name || 'Mesh'}`;
+  $('inspENU').textContent = `${pt.x.toFixed(2)}, ${pt.y.toFixed(2)}, ${pt.z.toFixed(2)}`;
+  $('inspGTA').textContent = `${gta[0]}, ${gta[1]}, ${gta[2]}`;
+  $('inspDFF').textContent = `${rootMesh.name || '—'} (#${rootMesh.userData?.id || '—'})`;
+  $('inspCOL').textContent = topCol ? `COL #${topCol.id} @ U=${topCol.z.toFixed(2)}m` : '❌ KHÔNG CÓ COL BÊN DƯỚI (VOID!)';
+  $('inspSlope').textContent = topCol ? `nz=${topCol.nz.toFixed(3)} (Dốc ${slopeDeg}°)` : '—';
+  $('inspGap').textContent = topCol ? `${gap} m` : '∞ (Rơi tự do!)';
+
+  let autoDiag = '✅ Bề mặt có va chạm .COL3 khớp bình thường.';
+  if (!topCol) {
+    autoDiag = '🚨 <strong>LỖI SÀN MA / VOID:</strong> Có hình .DFF nhưng KHÔNG có mặt .COL3 bên dưới (bước vào sẽ rơi tự do)!';
+    $('pinCategory').value = 'VOID_FREEFALL';
+  } else if (Math.abs(gap) > 0.25) {
+    autoDiag = `⚠️ <strong>HỞ MODEL / LỆCH CAO ĐỘ:</strong> Điểm bắn trên .DFF đang cao hơn mặt .COL3 bên dưới <strong>${gap}m</strong>. Bấm [Snap Chạm Đất COL] nếu muốn hạ xuống.`;
+    $('pinCategory').value = 'FLOATING_MODEL';
+  } else if (topCol.nz < PHYS.slopeCos) {
+    autoDiag = `⛰️ <strong>VÁCH DỐC CHẶN ĐƯỜNG:</strong> Độ dốc ${slopeDeg}° (> 45°), nhân vật không thể đi bộ lên mặt này.`;
+    $('pinCategory').value = 'STUCK_PATH';
+  }
+  $('inspDiagnosis').innerHTML = autoDiag;
+
+  lastProbedPoint = {
+    pos: [+pt.x.toFixed(3), +pt.y.toFixed(3), +pt.z.toFixed(3)],
+    gta_pos: gta,
+    model_id: rootMesh.userData?.id || null,
+    model_name: rootMesh.name || null,
+    col_id: topCol?.id || null,
+    col_z: topCol ? +topCol.z.toFixed(3) : null,
+    col_nz: topCol ? +topCol.nz.toFixed(3) : null,
+    gap_m: gap
+  };
+
+  // Place a small cyan ring marker at the probed spot
+  const ring = new T.Mesh(
+    new T.RingGeometry(0.25, 0.55, 16),
+    new T.MeshBasicMaterial({ color: 0x00ffcc, side: T.DoubleSide, depthTest: false })
+  );
+  ring.position.copy(pt);
+  ring.renderOrder = 15;
+  glitchMarkerGroup.add(ring);
+  setTimeout(() => glitchMarkerGroup.remove(ring), 6000);
+  return lastProbedPoint;
+}
+
+function addUserPin() {
+  const probe = lastProbedPoint || fireGlitchGun();
+  if (!probe) return;
+  const cat = $('pinCategory').value;
+  const note = $('pinNote').value.trim();
+  const offset = probe.model_id ? (api.modelOffsets[probe.model_id] || null) : null;
+  const pin = {
+    pin_id: 'USER-PIN-' + String(api.userPins.length + 1).padStart(2, '0'),
+    timestamp: new Date().toISOString(),
+    category: cat,
+    note: note || 'Ghim trực tiếp từ Eagle 3D Glitch Lab',
+    ...probe,
+    transform_delta: offset
+  };
+  api.userPins.push(pin);
+  localStorage.setItem('eagle_3d_user_pins_v1', JSON.stringify(api.userPins));
+  $('pinNote').value = '';
+  renderUserPins();
+
+  // Add permanent bright cyan marker in 3D scene
+  const flag = new T.Mesh(
+    new T.SphereGeometry(0.85, 12, 10),
+    new T.MeshBasicMaterial({ color: 0x00ffcc, depthTest: false })
+  );
+  flag.position.set(...probe.pos);
+  flag.renderOrder = 18;
+  glitchMarkerGroup.add(flag);
+  toast(`📌 Đã lưu ${pin.pin_id} (${cat}) tại E=${probe.pos[0]}, N=${probe.pos[1]}!`);
+}
+
+function renderUserPins() {
+  $('userPinCount').textContent = api.userPins.length;
+  const box = $('userPinList');
+  box.innerHTML = '';
+  api.userPins.forEach((p, idx) => {
+    const row = document.createElement('div');
+    row.className = 'user-pin-item';
+    const label = document.createElement('span');
+    label.textContent = `${p.pin_id} [${p.category}] · ${p.model_name || ''} (${p.pos[0].toFixed(1)}, ${p.pos[1].toFixed(1)})`;
+    label.title = p.note;
+    label.onclick = () => focusOnGlitch({ glitch_id: p.pin_id, title: p.note, pos: p.pos, model_id: p.model_id, model_name: p.model_name, detail: p.note });
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '×';
+    delBtn.style.padding = '2px 6px';
+    delBtn.onclick = () => {
+      api.userPins.splice(idx, 1);
+      localStorage.setItem('eagle_3d_user_pins_v1', JSON.stringify(api.userPins));
+      renderUserPins();
+    };
+    row.append(label, delBtn);
+    box.appendChild(row);
+  });
+}
+
+// Live Model Nudge / Snap to Ground
+function nudgeSelectedModel(de, dn, du, dyawDeg) {
+  if (!selectedMesh) {
+    toast('Hãy nhấp chọn hoặc bắn tia [F] vào một model trước khi dịch chuyển!');
+    return;
+  }
+  selectedMesh.position.x += de;
+  selectedMesh.position.y += dn;
+  selectedMesh.position.z += du;
+  selectedMesh.rotation.z += (dyawDeg * Math.PI) / 180;
+  if (selectionBox) selectionBox.update();
+
+  const id = selectedMesh.userData.id;
+  api.modelOffsets[id] = {
+    model_id: id,
+    model_name: selectedMesh.name,
+    delta_enu: [
+      +selectedMesh.position.x.toFixed(3),
+      +selectedMesh.position.y.toFixed(3),
+      +selectedMesh.position.z.toFixed(3)
+    ],
+    delta_yaw_deg: +((selectedMesh.rotation.z * 180) / Math.PI).toFixed(1)
+  };
+  toast(`🛠️ ${selectedMesh.name} (#${id}): ΔENU=(${api.modelOffsets[id].delta_enu.join(', ')})m, ΔYaw=${api.modelOffsets[id].delta_yaw_deg}°`);
+}
+
+function snapSelectedToGround() {
+  if (!selectedMesh) {
+    toast('Hãy chọn một model trước!');
+    return;
+  }
+  const gap = lastProbedPoint?.gap_m;
+  if (gap && Math.abs(gap) < 25) {
+    nudgeSelectedModel(0, 0, -gap, 0);
+  } else {
+    toast('Hãy ngắm tâm vào chân đế model cần hạ và nhấn [F] trước để đo chính xác độ hở!');
+  }
+}
+
+function renderGlitchPlaylist(filterType = 'ALL') {
+  activeFilter = filterType;
+  const listEl = $('glitchList');
+  listEl.innerHTML = '';
+  const all = REPORT.glitches || [];
+  const filtered = filterType === 'ALL' ? all : all.filter(g => g.type === filterType);
+  $('glitchFilterCount').textContent = `${filtered.length} / ${all.length}`;
+
+  for (const g of filtered) {
+    const card = document.createElement('div');
+    card.className = `glitch-card sev-${g.severity}`;
+    card.innerHTML = `
+      <div class="g-head"><span>${g.glitch_id} · ${g.subtype}</span><span>E=${g.pos[0]} N=${g.pos[1]}</span></div>
+      <div class="g-title">${g.title}</div>
+      <div class="g-sub">${g.fix_hint || ''}</div>
+    `;
+    card.onclick = () => {
+      document.querySelectorAll('.glitch-card').forEach(el => el.classList.remove('selected'));
+      card.classList.add('selected');
+      focusOnGlitch(g);
+    };
+    listEl.appendChild(card);
+  }
+}
+
+function renderSwarmJourneyList(filterMode = 'ALL_FAILED') {
+  const ws = REPORT.walkability_summary || {};
+  const allJourneys = ws.swarm_journeys || [];
+  const filtered = allJourneys.filter(j => {
+    if (!filterMode || filterMode === 'ALL_SWARM') return true;
+    if (filterMode === 'TARGET_ROUTES') return j.kind === 'TARGET_ROUTE';
+    if (filterMode === 'ALL_FAILED') return j.status === 'failed';
+    if (filterMode === 'ALL_INTENDED') return j.status === 'intended';
+    return j.seed_id === filterMode;
+  });
+  $('swarmListCount').textContent = `${filtered.length} / ${allJourneys.length}`;
+
+  const routeBox = $('routeButtons');
+  routeBox.innerHTML = '';
+  if (!filtered.length && filterMode === 'ALL_FAILED') {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'hint-box';
+    emptyMsg.style.borderColor = '#38d996';
+    emptyMsg.style.color = '#b8ffdf';
+    emptyMsg.innerHTML = `🎉 <strong>SẠCH BÓNG LỖI (0 / ${allJourneys.length} Bot gặp lỗi thật)!</strong><br>Toàn bộ 100 Bot Swarm đều <strong>PASS (75)</strong> hoặc dừng tại <strong>Địa hình tự nhiên có chủ đích (25)</strong>. Đang hiển thị các tuyến tiêu biểu bên dưới:`;
+    routeBox.appendChild(emptyMsg);
+  }
+  const displayList = (!filtered.length && filterMode === 'ALL_FAILED') ? allJourneys : filtered;
+  for (const j of displayList) {
+    const btn = document.createElement('button');
+    btn.style.textAlign = 'left';
+    const icon = j.status === 'pass' ? '🟢' : (j.status === 'intended' ? '🔵' : '🔴');
+    const subTxt = j.status === 'pass'
+      ? `✅ ${j.distance_m}m OK · 🎬 Xem hành trình`
+      : (j.status === 'intended'
+          ? `ℹ️ [Địa hình tự nhiên] ${j.outcome} (${j.distance_m}m)`
+          : `❌ [LỖI THẬT] ${j.outcome} (${j.distance_m}m) · 🎬 Dựng lại`);
+    btn.innerHTML = `${icon} <strong>[${j.bot_id}] ${j.name}</strong> <small style="color:#ffd97d;display:block;margin-top:2px">${subTxt}</small>`;
+    btn.onclick = () => {
+      startBotJourneyReplay(j, 'chase');
+    };
+    routeBox.appendChild(btn);
+  }
+}
+
+function populateUI() {
+  const ws = REPORT.walkability_summary || {};
+  $('kpiGlitches').textContent = REPORT.glitch_counts?.total || 0;
+  $('kpiCoverage').textContent = `${ws.walk_coverage_pct || 0}% (Nhảy: ${ws.jump_coverage_pct || 0}%)`;
+  $('kpiIslands').textContent = ws.isolated_islands_count || 0;
+  $('kpiSwarmCount').textContent = (ws.swarm_journeys || []).length;
+  $('subHeader').textContent = `Đã quét ${REPORT.geometry_stats?.col_triangles?.toLocaleString('vi-VN')} tam giác COL3 & ${REPORT.geometry_stats?.vis_triangles?.toLocaleString('vi-VN')} tam giác DFF · Đàn Swarm ${(ws.swarm_seeds || []).length} Seed (${(ws.swarm_journeys || []).length} Bot) · ${REPORT.glitch_counts?.total || 0} điểm Glitch.`;
+
+  const sel = $('swarmSeedSelect');
+  for (const s of ws.swarm_seeds || []) {
+    const opt = document.createElement('option');
+    opt.value = s.seed_id;
+    opt.textContent = `🌱 ${s.seed_id}: ${s.name}`;
+    sel.appendChild(opt);
+  }
+  renderSwarmJourneyList('ALL_FAILED');
+
+  renderGlitchPlaylist('ALL');
+  renderUserPins();
+}
+
+function getExportPayload() {
+  return {
+    exported_at: new Date().toISOString(),
+    user_pinned_glitches: api.userPins,
+    model_transform_patches: Object.values(api.modelOffsets),
+    automated_summary: {
+      glitch_counts: REPORT.glitch_counts,
+      walkability_summary: REPORT.walkability_summary,
+      top_glitches: (REPORT.glitches || []).slice(0, 35)
+    }
+  };
+}
+
+function bindEvents() {
+  $('btnModeOrbit').onclick = () => { replayState.camMode = 'orbit'; updateReplayCamButtons(); setMode('orbit'); };
+  $('btnModeWalk').onclick = () => { replayState.active = false; $('replayDock').style.display = 'none'; setMode('walk'); toast('🚶 Chế độ Đi bộ: WASD di chuyển · Space Nhảy · V bật X-Ray · F bắn tia ghim lỗi'); };
+  $('btnModeNoclip').onclick = () => { replayState.active = false; $('replayDock').style.display = 'none'; setMode('noclip'); toast('👻 Chế độ Bay Xuyên Tường (Noclip): WASD + Space/C lên xuống để soi gầm model & khe hở!'); };
+  $('btnSpawnBots').onclick = () => spawnSwarmBots('ALL_SWARM');
+  $('btnDropSeedHere').onclick = spawnCustomSeedAtCursor;
+  $('swarmSeedSelect').onchange = e => {
+    renderSwarmJourneyList(e.target.value);
+    spawnSwarmBots(e.target.value);
+  };
+
+  // Replay DVR Dock Controls
+  $('btnCloseReplay').onclick = () => {
+    replayState.active = false;
+    $('replayDock').style.display = 'none';
+    while (replayGroup.children.length) replayGroup.remove(replayGroup.children[0]);
+  };
+  $('btnReplayStart').onclick = () => {
+    replayState.cursor = 0;
+    applyReplayFrame(0);
+  };
+  $('btnReplayPrev').onclick = () => {
+    replayState.playing = false;
+    $('btnReplayPlay').textContent = '▶ Phát tiếp';
+    replayState.cursor = Math.max(0, Math.floor(replayState.cursor) - 1);
+    applyReplayFrame(replayState.cursor);
+  };
+  $('btnReplayNext').onclick = () => {
+    replayState.playing = false;
+    $('btnReplayPlay').textContent = '▶ Phát tiếp';
+    const maxI = (replayState.journey?.frames?.length || 1) - 1;
+    replayState.cursor = Math.min(maxI, Math.floor(replayState.cursor) + 1);
+    applyReplayFrame(replayState.cursor);
+  };
+  $('btnReplayPlay').onclick = () => {
+    replayState.playing = !replayState.playing;
+    $('btnReplayPlay').textContent = replayState.playing ? '⏸ Tạm dừng' : '▶ Phát tiếp';
+  };
+  $('btnReplayPreFail').onclick = () => {
+    const j = replayState.journey;
+    if (!j) return;
+    const fIdx = j.fail_step_idx >= 0 ? j.fail_step_idx : (j.frames.length - 1);
+    replayState.cursor = Math.max(0, fIdx - 4);
+    replayState.playing = true;
+    $('btnReplayPlay').textContent = '⏸ Tạm dừng';
+    applyReplayFrame(replayState.cursor);
+    toast(`💥 Đã tua tới 4 bước trước điểm lỗi (Bước #${Math.floor(replayState.cursor) + 1})!`);
+  };
+  $('replaySlider').oninput = e => {
+    replayState.playing = false;
+    $('btnReplayPlay').textContent = '▶ Phát tiếp';
+    replayState.cursor = parseFloat(e.target.value);
+    applyReplayFrame(replayState.cursor);
+  };
+  $('btnCamChase').onclick = () => { replayState.camMode = 'chase'; setMode('orbit'); updateReplayCamButtons(); applyReplayFrame(replayState.cursor); };
+  $('btnCamPOV').onclick = () => { replayState.camMode = 'pov'; setMode('orbit'); updateReplayCamButtons(); applyReplayFrame(replayState.cursor); };
+  $('btnCamOrbit').onclick = () => {
+    replayState.camMode = 'orbit';
+    setMode('orbit');
+    updateReplayCamButtons();
+    if (replayState.journey) {
+      const fp = replayState.journey.fail_pos || replayState.journey.frames[0];
+      orbit.target.set(fp[0], fp[1], fp[2]);
+      orbit.distance = 65;
+      updateCamera();
+    }
+  };
+
+  $('btnOverview').onclick = () => { replayState.camMode = 'orbit'; updateReplayCamButtons(); setMode('orbit'); orbit.target.set(0, 0, -20); orbit.distance = 1450; orbit.elevation = 0.68; updateCamera(); };
+  $('btnJumpStart').onclick = () => { placePlayer(321, -93.1, -54); orbit.target.set(321, -93.1, -54); orbit.distance = 90; updateCamera(); };
+  $('btnJumpPlaza').onclick = () => { placePlayer(115, -35, -49); orbit.target.set(115, -35, -49); orbit.distance = 75; updateCamera(); };
+  $('btnJump6Props').onclick = () => { setMode('orbit'); orbit.target.set(132.4, -36.5, -51.5); orbit.distance = 62; orbit.azimuth = -2.18; orbit.elevation = 0.42; updateCamera(); };
+
+  $('btnToggleLeft').onclick = () => $('leftPanel').classList.toggle('collapsed');
+  $('btnToggleRight').onclick = () => $('rightPanel').classList.toggle('collapsed');
+
+  $('chkXray').onchange = e => { xrayGroup.visible = e.target.checked; };
+  $('chkGlitchMarkers').onchange = e => { glitchMarkerGroup.visible = e.target.checked; };
+  $('chkHeatmap').onchange = e => { heatmapGroup.visible = e.target.checked; };
+  $('chkRoutes').onchange = e => { routeGroup.visible = e.target.checked; };
+  $('chkColWire').onchange = e => { colWireGroup.visible = e.target.checked; };
+  $('chkNear').onchange = e => { nearGroup.visible = e.target.checked; };
+  $('chkFoliage').onchange = e => { foliageGroup.visible = e.target.checked; };
+  $('chkGrid').onchange = e => { gridGroup.visible = e.target.checked; };
+  $('chkNight').onchange = e => {
+    night = e.target.checked;
+    scene.background.set(night ? 0x091526 : 0x99cad8);
+    scene.fog.color.copy(scene.background);
+    hemi.intensity = night ? 0.65 : 2.0;
+    sun.intensity = night ? 0.32 : 2.3;
+    for (const m of objects) {
+      const d = m.userData;
+      if (night && d.nightColors?.length) m.geometry.setAttribute('color', new T.Float32BufferAttribute(d.nightColors, 3));
+      else if (d.colors?.length) m.geometry.setAttribute('color', new T.Float32BufferAttribute(d.colors, 3));
+    }
+  };
+
+  document.querySelectorAll('#glitchFilterTabs button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#glitchFilterTabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGlitchPlaylist(btn.dataset.filter);
+    };
+  });
+
+  document.querySelectorAll('[data-nudge]').forEach(btn => {
+    btn.onclick = () => {
+      const [de, dn, du, dyaw] = btn.dataset.nudge.split(',').map(Number);
+      nudgeSelectedModel(de, dn, du, dyaw);
+    };
+  });
+  $('btnSnapGround').onclick = snapSelectedToGround;
+  $('btnResetTransform').onclick = () => {
+    if (!selectedMesh) return;
+    selectedMesh.position.set(0, 0, 0);
+    selectedMesh.rotation.z = 0;
+    if (selectionBox) selectionBox.update();
+    delete api.modelOffsets[selectedMesh.userData.id];
+    toast('↺ Đã khôi phục vị trí gốc của ' + selectedMesh.name);
+  };
+
+  $('btnAddPin').onclick = addUserPin;
+  $('btnExportPins').onclick = () => {
+    const txt = JSON.stringify(getExportPayload(), null, 2);
+    navigator.clipboard?.writeText(txt);
+    toast('📋 Đã copy JSON Patch vào Clipboard!');
+  };
+
+  $('btnOpenReport').onclick = () => {
+    $('modalPre').textContent = JSON.stringify(getExportPayload(), null, 2);
+    $('modalOverlay').style.display = 'grid';
+  };
+  $('btnCloseModal').onclick = () => $('modalOverlay').style.display = 'none';
+  $('btnCopyModalJson').onclick = () => {
+    navigator.clipboard?.writeText($('modalPre').textContent);
+    toast('📋 Đã copy toàn bộ JSON báo cáo & patch!');
+  };
+  $('btnDownloadModalJson').onclick = () => {
+    const blob = new Blob([$('modalPre').textContent], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'eagle_3d_glitch_patch.json';
+    a.click();
+  };
+
+  window.addEventListener('keydown', e => {
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    keys.add(e.code);
+    if (e.code === 'KeyV') {
+      $('chkXray').checked = !$('chkXray').checked;
+      xrayGroup.visible = $('chkXray').checked;
+      toast(xrayGroup.visible ? '🔬 Đã BẬT Kính X-Ray Độ Dốc & Pháp Tuyến' : 'Đã tắt Kính X-Ray');
+    } else if (e.code === 'KeyG') {
+      setMode(mode === 'noclip' ? 'walk' : 'noclip');
+      toast(mode === 'noclip' ? '👻 Đã bật Noclip (Bay xuyên tường)' : '🚶 Đã quay lại Đi bộ có va chạm COL3');
+    } else if (e.code === 'KeyB') {
+      spawnSwarmBots('ALL_SWARM');
+    } else if (e.code === 'KeyH') {
+      spawnCustomSeedAtCursor();
+    } else if (e.code === 'KeyF') {
+      fireGlitchGun();
+      addUserPin();
+    }
+    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', e => keys.delete(e.code));
+  window.addEventListener('blur', () => keys.clear());
+
+  const dom = renderer.domElement;
+  dom.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    fireGlitchGun(e.clientX, e.clientY);
+  });
+  dom.addEventListener('pointerdown', e => {
+    down = { x: e.clientX, y: e.clientY, button: e.button };
+    dragging = false;
+    dom.setPointerCapture(e.pointerId);
+  });
+  dom.addEventListener('pointermove', e => {
+    if (document.pointerLockElement === dom) {
+      player.yaw -= e.movementX * 0.0025;
+      player.pitch = T.MathUtils.clamp(player.pitch - e.movementY * 0.0025, -1.42, 1.42);
+      updateCamera();
+      return;
+    }
+    if (!down) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (Math.abs(dx) + Math.abs(dy) > 2) {
+      dragging = true;
+      if (replayState.active && replayState.camMode !== 'orbit') {
+        replayState.camMode = 'orbit';
+        updateReplayCamButtons();
+      }
+    }
+    if (mode === 'walk' || mode === 'noclip') {
+      player.yaw -= dx * 0.003;
+      player.pitch = T.MathUtils.clamp(player.pitch - dy * 0.003, -1.42, 1.42);
+    } else if (down.button === 2 || e.shiftKey) {
+      const factor = orbit.distance * 0.0012;
+      orbit.target.x += (Math.sin(orbit.azimuth) * dx + Math.cos(orbit.azimuth) * dy) * factor;
+      orbit.target.y += (-Math.cos(orbit.azimuth) * dx + Math.sin(orbit.azimuth) * dy) * factor;
+    } else {
+      orbit.azimuth -= dx * 0.005;
+      orbit.elevation = T.MathUtils.clamp(orbit.elevation + dy * 0.005, 0.04, 1.54);
+    }
+    down.x = e.clientX; down.y = e.clientY;
+    updateCamera();
+  });
+  dom.addEventListener('pointerup', e => {
+    if (!dragging && e.button === 0) {
+      if (mode === 'walk' || mode === 'noclip') {
+        if (document.pointerLockElement !== dom && dom.requestPointerLock) {
+          Promise.resolve(dom.requestPointerLock()).catch(() => {});
+        }
+      } else {
+        pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+        pickRay.setFromCamera(pointer, camera);
+        // Check if clicked on a Swarm Bot capsule first!
+        const botHit = pickRay.intersectObjects(botGroup.children, false)[0];
+        if (botHit?.object?.userData?.journey) {
+          startBotJourneyReplay(botHit.object.userData.journey, 'chase');
+          return;
+        }
+        // Or a Glitch Marker
+        const markerHit = pickRay.intersectObjects(glitchMarkerGroup.children, false)[0];
+        if (markerHit?.object?.userData?.glitch) {
+          focusOnGlitch(markerHit.object.userData.glitch);
+        } else {
+          fireGlitchGun(e.clientX, e.clientY);
+        }
+      }
+    }
+    down = null;
+  });
+  dom.addEventListener('dblclick', e => {
+    if (mode !== 'orbit') return;
+    const probe = fireGlitchGun(e.clientX, e.clientY);
+    if (probe && placePlayer(probe.pos[0], probe.pos[1], probe.pos[2])) {
+      setMode('walk');
+      toast('🚶 Đã đặt nhân vật đi bộ tại vị trí vừa nhấp đúp!');
+    }
+  });
+  dom.addEventListener('wheel', e => {
+    if (mode === 'orbit') {
+      if (replayState.active && replayState.camMode !== 'orbit') {
+        replayState.camMode = 'orbit';
+        updateReplayCamButtons();
+      }
+      orbit.distance = T.MathUtils.clamp(orbit.distance * Math.exp(e.deltaY * 0.001), 5, 4800);
+      updateCamera();
+    }
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+function frame(time) {
+  requestAnimationFrame(frame);
+  const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 0;
+  lastTime = time;
+  frameCount++;
+
+  if ((mode === 'walk' || mode === 'noclip') && dt) {
+    const fwd = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+    const str = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+    const fast = keys.has('ShiftLeft') || keys.has('ShiftRight');
+    const jumping = keys.has('Space');
+
+    if (mode === 'noclip') {
+      const spd = fast ? 65 : 22;
+      const upDown = (keys.has('Space') ? 1 : 0) - (keys.has('KeyC') || keys.has('ControlLeft') ? 1 : 0);
+      player.x += (Math.cos(player.yaw) * Math.cos(player.pitch) * fwd + Math.sin(player.yaw) * str) * spd * dt;
+      player.y += (Math.sin(player.yaw) * Math.cos(player.pitch) * fwd - Math.cos(player.yaw) * str) * spd * dt;
+      player.z += (Math.sin(player.pitch) * fwd + upDown * 0.8) * spd * dt;
+      player.reason = '👻 Bay Noclip tự do (Nhấn G để đáp xuống mặt đất COL3)';
+      updateCamera();
+    } else if (fwd || str || jumping) {
+      const spd = fast ? 8.5 : 3.8;
+      const len = Math.hypot(fwd, str) || 1;
+      const dx = (Math.cos(player.yaw) * (fwd / len) + Math.sin(player.yaw) * (str / len)) * spd * dt;
+      const dy = (Math.sin(player.yaw) * (fwd / len) - Math.cos(player.yaw) * (str / len)) * spd * dt;
+      moveWorld(dx, dy, jumping);
+    }
+  }
+
+  if (activeBots.length && dt) updateSwarmBots(dt);
+  if (replayState.active && dt) updateReplayDVR(dt);
+  renderer.render(scene, camera);
+
+  if (frameCount % 10 === 0) {
+    const n = v => Number(v).toFixed(2);
+    if (mode === 'walk' || mode === 'noclip') {
+      $('walkstate').textContent = `${mode.toUpperCase()} · E=${n(player.x)} · N=${n(player.y)} · U=${n(player.z)}m | ${player.reason}`;
+    } else {
+      $('walkstate').textContent = `ORBIT · Tâm E=${n(orbit.target.x)} · N=${n(orbit.target.y)} · Khoảng cách ${n(orbit.distance)}m | Nhấp vào Bot/Tuyến: Xem Replay DVR · Phím H: Thả Seed Mới`;
+    }
+  }
+}
+
+async function init() {
+  try {
+    renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = T.SRGBColorSpace;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    $('view').appendChild(renderer.domElement);
+
+    scene = new T.Scene();
+    scene.background = new T.Color(0x99cad8);
+    scene.fog = new T.Fog(0x99cad8, 1500, 6800);
+    camera = new T.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 9000);
+    camera.up.set(0, 0, 1);
+
+    hemi = new T.HemisphereLight(0xc6e4ef, 0x6c7762, 2.0);
+    hemi.position.set(0, 0, 1);
+    scene.add(hemi);
+    sun = new T.DirectionalLight(0xfff0d3, 2.3);
+    sun.position.set(-500, -600, 900);
+    scene.add(sun);
+
+    nearGroup = new T.Group();
+    lodGroup = new T.Group();
+    colWireGroup = new T.Group();
+    xrayGroup = new T.Group();
+    glitchMarkerGroup = new T.Group();
+    heatmapGroup = new T.Group();
+    routeGroup = new T.Group();
+    foliageGroup = new T.Group();
+    gridGroup = new T.Group();
+    botGroup = new T.Group();
+    replayGroup = new T.Group();
+    scene.add(nearGroup, lodGroup, colWireGroup, xrayGroup, glitchMarkerGroup, heatmapGroup, routeGroup, foliageGroup, gridGroup, botGroup, replayGroup);
+
+    lodGroup.visible = false;
+    colWireGroup.visible = false;
+    xrayGroup.visible = false;
+    gridGroup.visible = false;
+
+    waterMesh = new T.Mesh(
+      new T.PlaneGeometry(6000, 6000),
+      new T.MeshStandardMaterial({ color: 0x3b8e9c, roughness: 0.28, metalness: 0.12, transparent: true, opacity: 0.78, side: T.DoubleSide })
+    );
+    waterMesh.position.z = Number(REPORT.water_level_m ?? -58);
+    scene.add(waterMesh);
+
+    $('loadingText').textContent = 'Đang giải mã Texture nhúng cục bộ…';
+    await Promise.all(Object.keys(DATA.textures || {}).map(loadTexture));
+    for (const m of DATA.models || []) addModel(m);
+
+    $('loadingText').textContent = 'Đang dựng lưới .COL3, Kính X-Ray & Đàn Bot Đa Hạt Giống…';
+    buildCollisionAndXray();
+    buildDiagnosticVisuals();
+    populateUI();
+    bindEvents();
+    placePlayer(321, -93.1, -54);
+    spawnSwarmBots('ALL_SWARM');
+    updateCamera();
+
+    Object.assign(api, {
+      ready: true,
+      setMode,
+      focusOnGlitch: idx => focusOnGlitch(REPORT.glitches[idx]),
+      startBotJourneyReplay: (idx, cam = 'chase') => startBotJourneyReplay(REPORT.walkability_summary.swarm_journeys[idx], cam),
+      spawnCustomSeedAtCursor,
+      fireGlitchGun,
+      spawnSwarmBots,
+      teleport: (x, y, z = null) => placePlayer(x, y, z),
+      toggleXray: v => { xrayGroup.visible = v; $('chkXray').checked = v; },
+      screenshot: () => { renderer.render(scene, camera); return renderer.domElement.toDataURL('image/png'); }
+    });
+
+    $('loading').style.display = 'none';
+    requestAnimationFrame(frame);
+  } catch (err) {
+    api.errors.push(err.stack || String(err));
+    $('loading').innerHTML = `<strong style="color:#ff8a8a">Lỗi khởi tạo WebGL: ${err.message}</strong>`;
+    console.error(err);
+  }
+}
+init();
+})();
+</script>
+</body>
+</html>
